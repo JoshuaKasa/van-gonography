@@ -1,5 +1,7 @@
 #### <p align="center">Hide any type of files inside a image of your choice</p>
 
+![Terminal image](img/Terminal.png)
+
 <p align="center">
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
