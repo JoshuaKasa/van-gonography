@@ -5,6 +5,8 @@ import numpy as np
 
 from PIL import Image
 from tkinter import Tk, filedialog
+from colorama import Fore, init
+
 from utils import *
 
 SINGLE_RGB_BIT_SIZE = 8 # Each RGB value is composed of 3 colors, each color is composed of 8 bits
@@ -370,6 +372,8 @@ def differentiate_image(source, cover, output_directory: str = None) -> None:
                 
 def main():
     
+    init(autoreset=True)
+    
     os.system('cls' if os.name == 'nt' else 'clear')
     print(
         """
@@ -384,11 +388,14 @@ def main():
    `--`--'   `--`        `--`./  `--``--`------'     `--`--''   `--`./  `--`   `--`--''    `--`------' `--`-`--`--' `--`        `--`---'   `--`-' `-`--` `--`-`                 `--`--'    `-----`---``=`   ``--'--'   `=`   ``--'--'     
         """
     )
+    print()
+    print(Fore.YELLOW + "Version 1.0.0")
     print("Welcome to VanGonography! Please select an option:")
-    print("[1] Hide a file in an image")
-    print("[2] Reveal a hidden file in an image")
-    print("[3] Show the difference between two images")
-    print("[4] Exit")
+    print()
+    print(Fore.LIGHTRED_EX + "[1] " + Fore.WHITE + "Hide a file in an image")
+    print(Fore.LIGHTRED_EX + "[2] " + Fore.WHITE + "Reveal a hidden file in an image")
+    print(Fore.LIGHTRED_EX + "[3] " + Fore.WHITE + "Show the difference between two images")
+    print(Fore.LIGHTRED_EX + "[4] " + Fore.WHITE + "Exit")
     print()
     
     while True:

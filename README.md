@@ -1,4 +1,4 @@
-#### <center>Hide any type of files inside a image of your choice</center>
+#### <p align="center">Hide any type of files inside a image of your choice</p>
 
 <p align="center">
   <a href="LICENSE">
@@ -18,6 +18,8 @@
 - [Introduction](#introduction)
 - [Installation](#installation)
 - [Usage](#usage)
+- [License](#license)
+- [Contributing](#contributing)
 
 # Introduction
 
@@ -47,6 +49,7 @@ python vangonography.py
 
 # License
 
+MIT © Van Gonography
 [MIT](LICENSE)
 
 # Contributing
