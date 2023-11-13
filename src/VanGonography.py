@@ -5,41 +5,12 @@ import numpy as np
 
 from PIL import Image
 from tkinter import Tk, filedialog
+from utils import *
 
 SINGLE_RGB_BIT_SIZE = 8 # Each RGB value is composed of 3 colors, each color is composed of 8 bits
 SINGLE_RGB_PIXEL_BIT_SIZE = SINGLE_RGB_BIT_SIZE * 3 # Each pixel is composed of 3 RGB values, each RGB value is composed of 3 colors, each color is composed of 8 bits
 
-def get_file_size(file_path: str) -> int:
-    size = os.path.getsize(file_path)
-    return size * 8 # Return in bits
-
-def binary_to_text(binary: str) -> str:
-    text = "".join([chr(int(binary[i:i+8], 2)) for i in range(0, len(binary), 8)])
-    return text
-
-def text_to_binary(text: str) -> str:
-    binary = "".join([format(ord(char), '08b') for char in text])
-    return binary
-
-def binary_to_int(binary: str) -> int:
-    integer = int(binary, 2)
-    return integer
-
-def binary_to_file(binary_string, filename):
-    byte_array = bytearray(int(binary_string[i:i+8], 2) for i in range(0, len(binary_string), 8))
-    with open(filename, 'wb') as f:
-        f.write(byte_array)
-
-def binary_to_int(binary: str) -> int:
-    integer = int(binary, 2)
-    return integer
-
-# Function for adding a header to the image
-from PIL import Image
-import numpy as np
-import io
-
-def add_header(image: str, extension: str, data_length: int) -> None:
+def add_header(image: str, extension: str, data_length: int, output_directory: str = None) -> None:
     """
     Adds a header to the cover image before hiding data.
 
@@ -51,249 +22,505 @@ def add_header(image: str, extension: str, data_length: int) -> None:
     Returns:
     None
     """
+    try:
+        # Check if the image file exists
+        with open(image, 'rb') as img_file:
+            pass
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Image file not found: {image}")
+
+    # Check if the extension is a non-empty string
+    if not extension or not isinstance(extension, str):
+        raise ValueError("Invalid extension. It should be a non-empty string.")
+
+    # Check if data_length is a positive integer
+    if not isinstance(data_length, int) or data_length <= 0:
+        raise ValueError("Invalid data length. It should be a positive integer.")
+
     # Read the cover image
-    with Image.open(image, "r") as cover:
-        cover_array = np.array(cover)
+    try:
+        with Image.open(image, "r") as cover:
+            cover_array = np.array(cover)
+    except Exception as e:
+        raise Exception(f"Error opening the cover image: {e}")
 
-        # Getting the height of the cover image (we will write the header vertically)
-        height = cover_array.shape[0]
+    # Getting the height of the cover image (we will write the header vertically)
+    height = cover_array.shape[0]
 
-        # Convert extension and data_length to binary and get their lengths
-        extension_binary = text_to_binary(extension)
-        extension_length = len(extension_binary)
-        
-        data_length_binary = text_to_binary(str(data_length))
-        data_length_length = len(data_length_binary)
-        
-        # Writing the extension length and data length length to the first pixel
-        cover_array[0, 0] = [extension_length, data_length_length, 0]
-        
-        # Writing the extension to the next pixels, we will use the 3 red channel bits of each pixel
-        pixel_bits_used = 3 # Number of bits we will use in each pixel
-        pixels_needed = np.ceil(extension_length / pixel_bits_used).astype(int) # Number of pixels needed to store the extension
-        
-        for i in range(pixels_needed):
-            # Get the RGB values of the current pixel
-            r, g, b = cover_array[i + 1, 0] # We start at 1 because we already used the first pixel
-            
-            # Get the bits of the extension that will be stored in the current pixel
-            extension_bits = extension_binary[i * pixel_bits_used : (i + 1) * pixel_bits_used].ljust(pixel_bits_used, '0')
-            
-            # Convert the bits to an integer
-            extension_int = int(extension_bits, 2)
-            
-            # Modify the last 3 bits of the red channel
-            r = (r & 0b11111000) | extension_int # 0b11111000 is used to clear the last 3 bits of the red channel
-            
-            # Replace the RGB values of the current pixel with the modified RGB values
-            cover_array[i + 1, 0] = [r, g, b]
-            
-        # Writing the data length to the next pixels, we will use the 3 green channel bits of each pixel
-        starting_index = 1 + pixels_needed # We start at 1 because we already used the first pixel
-        pixels_needed = np.ceil(data_length_length / pixel_bits_used).astype(int)
-        
-        for i in range(starting_index, starting_index + pixels_needed):
-            # Get the RGB values of the current pixel
-            r, g, b = cover_array[i, 0]
-            
-            # Get the bits of the data length that will be stored in the current pixel
-            data_length_bits = data_length_binary[(i - starting_index) * pixel_bits_used : (i - starting_index + 1) * pixel_bits_used].ljust(pixel_bits_used, '0')
+    # Convert extension and data_length to binary and get their lengths
+    extension_binary = text_to_binary(extension)
+    extension_length = len(extension_binary)
+    
+    data_length_binary = text_to_binary(str(data_length))
+    data_length_length = len(data_length_binary)
 
-            
-            # Convert the bits to an integer
-            data_length_int = int(data_length_bits, 2)
-            
-            # Modify the last 3 bits of the green channel
-            g = (g & 0b11111000) | data_length_int
-            
-            # Replace the RGB values of the current pixel with the modified RGB values
-            cover_array[i, 0] = [r, g, b]
-            
-        # Save the modified cover image
-        output_filename = "Cover.png"
-        with io.BytesIO() as output:  # Using BytesIO to save the image in memory
-            Image.fromarray(cover_array).save(output, format="PNG")  # Convert the numpy array to an image and save it to the BytesIO object
-            output.seek(0)  # Move the cursor to the beginning of the BytesIO object
-            with open(output_filename, "wb") as f:
-                f.write(output.read())  # Write the contents of the BytesIO object to a file
+    # Check if the data to be hidden is small enough to fit in the image
+    total_bits_needed = extension_length + data_length_length
+    max_bits_available = (height - 1) * 3 * 8  # Height - 1 pixels, 3 channels (RGB), 8 bits per channel
+    if total_bits_needed > max_bits_available:
+        raise ValueError("Data to be hidden is too large for the given image.")
+
+    # Writing the extension length and data length length to the first pixel
+    cover_array[0, 0] = [extension_length, data_length_length, 0]
+        
+    # Writing the extension to the next pixels, we will use the 3 red channel bits of each pixel
+    pixel_bits_used = 3 # Number of bits we will use in each pixel
+    pixels_needed = np.ceil(extension_length / pixel_bits_used).astype(int) # Number of pixels needed to store the extension
+    
+    for i in range(pixels_needed):
+        # Get the RGB values of the current pixel
+        r, g, b = cover_array[i + 1, 0] # We start at 1 because we already used the first pixel
+        
+        # Get the bits of the extension that will be stored in the current pixel
+        extension_bits = extension_binary[i * pixel_bits_used : (i + 1) * pixel_bits_used].ljust(pixel_bits_used, '0')
+        
+        # Convert the bits to an integer
+        extension_int = int(extension_bits, 2)
+        
+        # Modify the last 3 bits of the red channel
+        r = (r & 0b11111000) | extension_int # 0b11111000 is used to clear the last 3 bits of the red channel
+        
+        # Replace the RGB values of the current pixel with the modified RGB values
+        cover_array[i + 1, 0] = [r, g, b]
+        
+    # Writing the data length to the next pixels, we will use the 3 green channel bits of each pixel
+    starting_index = 1 + pixels_needed # We start at 1 because we already used the first pixel
+    pixels_needed = np.ceil(data_length_length / pixel_bits_used).astype(int)
+    
+    for i in range(starting_index, starting_index + pixels_needed):
+        # Get the RGB values of the current pixel
+        r, g, b = cover_array[i, 0]
+        
+        # Get the bits of the data length that will be stored in the current pixel
+        data_length_bits = data_length_binary[(i - starting_index) * pixel_bits_used : (i - starting_index + 1) * pixel_bits_used].ljust(pixel_bits_used, '0')
+
+        
+        # Convert the bits to an integer
+        data_length_int = int(data_length_bits, 2)
+        
+        # Modify the last 3 bits of the green channel
+        g = (g & 0b11111000) | data_length_int
+        
+        # Replace the RGB values of the current pixel with the modified RGB values
+        cover_array[i, 0] = [r, g, b]
+        
+    try:
+        Image.fromarray(cover_array).save(image, format="PNG")
+    except Exception as e:
+        raise Exception(f"Error saving the modified cover image: {e}")
+
               
 def get_header(image: str) -> dict:
-    with Image.open(image, "r") as cover:
-        cover_array = np.array(cover)
+    
+    try:
+        # Check if the image file exists
+        with open(image, 'rb'):
+            pass
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Image file not found: {image}")
 
-        # Get the extension length and data length length from the first pixel
+    try:
+        with Image.open(image, "r") as cover:
+            cover_array = np.array(cover)
+    except Exception as e:
+        raise Exception(f"Error opening the cover image: {e}")
+
+    # Get the extension length and data length length from the first pixel
+    try:
         extension_length, data_length_length, _ = cover_array[0, 0]
+    except IndexError:
+        raise ValueError("Invalid image format. Header information not found.")
 
-        # Get the extension from the next pixels, we will use the 3 red channel bits of each pixel
-        extension = ""
-        pixel_bits_used = 3  # Number of bits we will use in each pixel
-        pixels_needed = np.ceil(extension_length / pixel_bits_used).astype(int)
+    # Get the extension from the next pixels, we will use the 3 red channel bits of each pixel
+    extension = ""
+    pixel_bits_used = 3  # Number of bits we will use in each pixel
+    pixels_needed = np.ceil(extension_length / pixel_bits_used).astype(int)
 
-        for i in range(pixels_needed):
-            # Get the RGB values of the current pixel
+    for i in range(pixels_needed):
+        # Get the RGB values of the current pixel
+        try:
             r, _, _ = cover_array[i + 1, 0]  # We start at 1 because we already used the first pixel
+        except IndexError:
+            raise ValueError("Invalid image format. Insufficient pixels for extension.")
 
-            # Get the last 3 bits of the red channel
-            extension_bits = f"{r & 0b00000111:03b}"
+        # Get the last 3 bits of the red channel
+        extension_bits = f"{r & 0b00000111:03b}"
 
-            # Add the bits to the extension
-            extension += extension_bits
+        # Add the bits to the extension
+        extension += extension_bits
 
-        # Remove extra bits beyond the extension length
-        extension = extension[:extension_length]
+    # Remove extra bits beyond the extension length
+    extension = extension[:extension_length]
 
-        # Convert the extension to text
+    # Convert the extension to text
+    try:
         extension = binary_to_text(extension)
+    except ValueError as e:
+        raise ValueError(f"Error converting extension to text: {e}")
 
-        # Get the data length from the next pixels, we will use the 3 green channel bits of each pixel
-        starting_index = 1 + pixels_needed  # We start at 1 because we already used the first pixel
-        pixels_needed = np.ceil(data_length_length / pixel_bits_used).astype(int)
+    # Get the data length from the next pixels, we will use the 3 green channel bits of each pixel
+    starting_index = 1 + pixels_needed  # We start at 1 because we already used the first pixel
+    pixels_needed = np.ceil(data_length_length / pixel_bits_used).astype(int)
 
-        data_length = ""
+    data_length = ""
 
-        for i in range(starting_index, starting_index + pixels_needed):
-            # Get the RGB values of the current pixel
+    for i in range(starting_index, starting_index + pixels_needed):
+        # Get the RGB values of the current pixel
+        try:
             _, g, _ = cover_array[i, 0]
+        except IndexError:
+            raise ValueError("Invalid image format. Insufficient pixels for data length.")
 
-            # Get the last 3 bits of the green channel
-            data_length_bits = f"{g & 0b00000111:03b}"
+        # Get the last 3 bits of the green channel
+        data_length_bits = f"{g & 0b00000111:03b}"
 
-            # Add the bits to the data length
-            data_length += data_length_bits
+        # Add the bits to the data length
+        data_length += data_length_bits
 
-        # Remove extra bits beyond the data length
-        data_length = data_length[:data_length_length]
+    # Remove extra bits beyond the data length
+    data_length = data_length[:data_length_length]
 
-        # Convert the data length to text and remove null characters
+    # Convert the data length to text and remove null characters
+    try:
         data_length = binary_to_text(data_length).replace('\x00', '')
+    except ValueError as e:
+        raise ValueError(f"Error converting data length to text: {e}")
 
-        return {
-            "extension": extension,
-            "data_length": int(data_length)
-        }
+    return {
+        "extension": extension,
+        "data_length": int(data_length)
+    }
 
 # Getting the RGB of each pixel in the cover image, then converting it to binary and modifying the LSB
-def encode_image(file: str, image: str) -> None:
-    
+def encode_image(file: str, image: str, output_directory: str = None) -> None:
+    try:
+        # Check if the file to hide exists
+        with open(file, 'rb') as f:
+            pass
+    except FileNotFoundError:
+        raise FileNotFoundError(f"File to hide not found: {file}")
+
+    try:
+        # Check if the cover image file exists
+        with open(image, 'rb') as img_file:
+            pass
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Cover image file not found: {image}")
+
     # Get the binary data of a file to hide
     with open(file, "rb") as f:
         data = "".join([f"{byte:08b}" for byte in f.read()])
     data_length = len(data)
-    
+
     # Get the extension of the file to hide
     extension = os.path.splitext(file)[1][1:]
-    
+
     # Read the cover image and work with it
-    with Image.open(image, 'r') as cover:
-        cover_array = np.array(cover)
-        
-        # Getting the width and height of the cover image
-        width = cover_array.shape[1]
-        height = cover_array.shape[0]
-        
-        # Checking if the cover image is large enough to hide the data
-        if width * height * SINGLE_RGB_PIXEL_BIT_SIZE * 2 < data_length:
-            raise Exception("Cover image is too small to hide the data.")
-        
-        data_index = 0
-        bitmask = 0b11111100 # Used to clear the last two bits of a number
-        
-        # Looping through each pixel in the cover image
-        for i in range(1, width): # Loop through each column
-            for j in range(height): # Loop through each row
-                
-                # Checking if there's still data to hide
-                if data_index >= len(data):
-                    break  # Exit the inner loop if all data is processed
+    try:
+        with Image.open(image, 'r') as cover:
+            cover_array = np.array(cover)
+    except Exception as e:
+        raise Exception(f"Error opening the cover image: {e}")
 
-                # Get the RGB values of the current pixel
-                r, g, b = cover_array[j, i]
-                
-                # Modify the last two bits of each channel
-                for k in range(3):
-                    if data_index < len(data):
-                        cover_array[j, i][k] = (cover_array[j, i][k] & bitmask) | int(data[data_index:data_index + 2], 2)
-                        data_index += 2 # Increment the data index by 2 because we're processing 2 bits at a time
-                    else:
-                        break
-                
-        # Save the modified cover image as "Cover.png"
-        Image.fromarray(cover_array).save("Cover.png", format="PNG")
-        
-        add_header("Cover.png", extension, data_length)
+    # Getting the width and height of the cover image
+    width = cover_array.shape[1]
+    height = cover_array.shape[0]
+
+    # Checking if the cover image is large enough to hide the data
+    if width * height * SINGLE_RGB_PIXEL_BIT_SIZE * 2 < data_length:
+        raise ValueError("Cover image is too small to hide the data.")
+
+    data_index = 0
+    bitmask = 0b11111100  # Used to clear the last two bits of a number
+
+    # Looping through each pixel in the cover image
+    for i in range(1, width):  # Loop through each column
+        for j in range(height):  # Loop through each row
+
+            # Checking if there's still data to hide
+            if data_index >= len(data):
+                break  # Exit the inner loop if all data is processed
+
+            # Get the RGB values of the current pixel
+            r, g, b = cover_array[j, i]
+
+            # Modify the last two bits of each channel
+            for k in range(3):
+                if data_index < len(data):
+                    cover_array[j, i][k] = (cover_array[j, i][k] & bitmask) | int(data[data_index:data_index + 2], 2)
+                    data_index += 2  # Increment the data index by 2 because we're processing 2 bits at a time
+                else:
+                    break
+
+    # Save the modified cover image as "Cover_{extension}.png"
+    output_filename = f"Cover_{extension}.png"
+    if output_directory:
+        output_filename = os.path.join(output_directory, output_filename)
+    
+    try:
+        Image.fromarray(cover_array).save(output_filename, format="PNG")
+    except Exception as e:
+        raise Exception(f"Error saving the modified cover image: {e}")
+
+    # Add header to the modified cover image
+    try:
+        add_header(output_filename, extension, data_length, output_filename)
+    except Exception as e:
+        raise Exception(f"Error adding header to the modified cover image: {e}")
                             
-def decode_image(image):
-    extension = get_header(image)["extension"].replace("\x01", "_")
-    data_length = get_header(image)["data_length"]
-    
-    with Image.open(image, 'r') as steg_image:
-        steg_array = np.array(steg_image)
-        
-        width = steg_array.shape[1]
-        height = steg_array.shape[0]
-        
-        # This is a bit hard to explain but basically, we're getting the last two bits of each RGB value and concatenating them to form a binary string
-        binary_string = "".join([
-            f"{(steg_array[j, i][0] & 0b00000011):02b}{(steg_array[j, i][1] & 0b00000011):02b}{(steg_array[j, i][2] & 0b00000011):02b}"
-            for i in range(1, width) for j in range(height) if data_length > 0
-        ])
-        binary_string = binary_string[:data_length] # Truncate the binary string to the length of the data
-    
-    # Make a file out of the binary string then adding the file extension
-    binary_to_file(binary_string, f"Output.{extension}")
+def decode_image(image, output_directory: str = None) -> None:
+    try:
+        # Check if the image file exists
+        with open(image, 'rb'):
+            pass
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Image file not found: {image}")
 
-def differentiate_image(source, cover):
-    # Get the 2 images as numpy arrays
-    with Image.open(source, 'r') as source_image, Image.open(cover, 'r') as cover_image:
-        source_array = np.array(source_image)
-        cover_array = np.array(cover_image)
-        
-        # We only get 1 image's width and height because we assume that the 2 images have the same dimensions
-        width = source_array.shape[1]
-        height = source_array.shape[0]
-        
-        # Create a new image called "Difference.png" that will show the scaled difference between the source and cover images
-        difference_array = np.zeros((height, width, 3), dtype=np.uint8)
-        
-        # Loop through each pixel in the source and cover images
-        for i in range(width):
-            for j in range(height):
-                # Get the RGB values of the current pixel at both images
-                r, g, b = source_array[j, i]
-                r2, g2, b2 = cover_array[j, i]
+    try:
+        # Get header information
+        header_info = get_header(image)
+        extension = header_info["extension"].replace("\x01", "_")
+        data_length = header_info["data_length"]
+    except Exception as e:
+        raise Exception(f"Error decoding header information: {e}")
+
+    try:
+        with Image.open(image, 'r') as steg_image:
+            steg_array = np.array(steg_image)
+    except Exception as e:
+        raise Exception(f"Error opening the stego image: {e}")
+
+    width = steg_array.shape[1]
+    height = steg_array.shape[0]
+
+    # This is a bit hard to explain, but basically, we're getting the last two bits of each RGB value and concatenating them to form a binary string
+    binary_string = "".join([
+        f"{(steg_array[j, i][0] & 0b00000011):02b}{(steg_array[j, i][1] & 0b00000011):02b}{(steg_array[j, i][2] & 0b00000011):02b}"
+        for i in range(1, width) for j in range(height) if data_length > 0
+    ])
+    binary_string = binary_string[:data_length]  # Truncate the binary string to the length of the data
+
+    # Saving the file
+    output_filename = f"Output.{extension}"
+    if output_directory:
+        output_filename = os.path.join(output_directory, output_filename)
+    
+    try:
+        # Make a file out of the binary string then adding the file extension
+        binary_to_file(binary_string, output_filename)
+    except Exception as e:
+        raise Exception(f"Error creating output file: {e}")
+
+def differentiate_image(source, cover, output_directory: str = None) -> None:
+    try:
+        # Check if the source image file exists
+        with open(source, 'rb'):
+            pass
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Source image file not found: {source}")
+
+    try:
+        # Check if the cover image file exists
+        with open(cover, 'rb'):
+            pass
+    except FileNotFoundError:
+        raise FileNotFoundError(f"Cover image file not found: {cover}")
+
+    try:
+        # Get the source and cover images as numpy arrays
+        with Image.open(source, 'r') as source_image, Image.open(cover, 'r') as cover_image:
+            source_array = np.array(source_image)
+            cover_array = np.array(cover_image)
+    except Exception as e:
+        raise Exception(f"Error opening source or cover image: {e}")
+
+    # We only get 1 image's width and height because we assume that the 2 images have the same dimensions
+    width = source_array.shape[1]
+    height = source_array.shape[0]
+
+    # Create a new image called "Difference.png" that will show the scaled difference between the source and cover images
+    difference_array = np.zeros((height, width, 3), dtype=np.uint8)
+
+    # Loop through each pixel in the source and cover images
+    for i in range(width):
+        for j in range(height):
+            # Get the RGB values of the current pixel at both images
+            r, g, b = source_array[j, i]
+            r2, g2, b2 = cover_array[j, i]
+
+            # Scale the differences to a visible range (e.g., 0-255)
+            scaled_difference = (
+                # Adding 128 to the difference to make it visible
+                np.uint8(min(255, max(0, np.int16(r2) - np.int16(r) + 128))),
+                np.uint8(min(255, max(0, np.int16(g2) - np.int16(g) + 128))),
+                np.uint8(min(255, max(0, np.int16(b2) - np.int16(b) + 128)))
+            )
+
+            difference_array[j, i] = scaled_difference
+
+    # Go look at the code for encode_image() to understand how this works
+    output_filename = "Difference.png"
+    if output_directory:
+        output_filename = os.path.join(output_directory, output_filename)
+    
+    try:
+        Image.fromarray(difference_array).save(output_filename, format="PNG")
+    except Exception as e:
+        raise Exception(f"Error saving the difference image: {e}")
                 
-                # Scale the differences to a visible range (e.g., 0-255)
-                scaled_difference = (
-                    # Adding 128 to the difference to make it visible
-                    np.uint8(min(255, max(0, np.int16(r2) - np.int16(r) + 128))), 
-                    np.uint8(min(255, max(0, np.int16(g2) - np.int16(g) + 128))),
-                    np.uint8(min(255, max(0, np.int16(b2) - np.int16(b) + 128)))
-                )
-                
-                difference_array[j, i] = scaled_difference
+def main():
+    
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print(
+        """
+        ,-.-.  ,---.      .-._            _,---.     _,.---._    .-._          _,.---._         _,---.                ,---.          _ __   ,--.-,,-,--,                             ,-.-. ,-----.--.       _.---.,_         _.---.,_     
+ ,--.-./=/ ,/.--.'  \    /==/ \  .-._ _.='.'-,  \  ,-.' , -  `. /==/ \  .-._ ,-.' , -  `.   _.='.'-,  \  .-.,.---.  .--.'  \      .-`.' ,`./==/  /|=|  |,--.-.  .-,--.        ,--.-./=/ ,//` ` - /==/     .'  - , `.-,     .'  - , `.-,   
+/==/, ||=| -|\==\-/\ \   |==|, \/ /, /==.'-     / /==/_,  ,  - \|==|, \/ /, /==/_,  ,  - \ /==.'-     / /==/  `   \ \==\-/\ \    /==/, -   \==|_ ||=|, /==/- / /=/_ /        /==/, ||=| -|`-'-. -|==|    / -  ,  ,_\==\   / -  ,  ,_\==\  
+\==\,  \ / ,|/==/-|_\ |  |==|-  \|  /==/ -   .-' |==|   .=.     |==|-  \|  |==|   .=.     /==/ -   .-' |==|-, .=., |/==/-|_\ |  |==| _ .=. |==| ,|/=| _\==\, \/=/. /         \==\,  \ / ,|    | `|==|   |     .=.   |==| |     .=.   |==| 
+ \==\ - ' - /\==\,   - \ |==| ,  | -|==|_   /_,-.|==|_ : ;=:  - |==| ,  | -|==|_ : ;=:  - |==|_   /_,-.|==|   '='  /\==\,   - \ |==| , '=',|==|- `-' _ |\==\  \/ -/           \==\ - ' - /    | -|==|   | -  :=; : _|==| | -  :=; : _|==| 
+  \==\ ,   | /==/ -   ,| |==| -   _ |==|  , \_.' )==| , '='     |==| -   _ |==| , '='     |==|  , \_.' )==|- ,   .' /==/ -   ,| |==|-  '..'|==|  _     | |==|  ,_/             \==\ ,   |     | `|==|   |     `=` , |==| |     `=` , |==| 
+  |==| -  ,//==/-  /\ - \|==|  /\ , \==\-  ,    ( \==\ -    ,_ /|==|  /\ , |\==\ -    ,_ /\==\-  ,    (|==|_  . ,'./==/-  /\ - \|==|,  |   |==|   .-. ,\ \==\-, /              |==| -  ,/   .-','|==| .=.\ _,    - /==/.=.\ _,    - /==/  
+  \==\  _ / \==\ _.\=\.-'/==/, | |- |/==/ _  ,  /  '.='. -   .' /==/, | |- | '.='. -   .'  /==/ _  ,  //==/  /\ ,  )==\ _.\=\.-'/==/ - |   /==/, //=/  | /==/._/               \==\  _ /   /     \==\:=; :`.   - .`=.`:=; :`.   - .`=.`   
+   `--`--'   `--`        `--`./  `--``--`------'     `--`--''   `--`./  `--`   `--`--''    `--`------' `--`-`--`--' `--`        `--`---'   `--`-' `-`--` `--`-`                 `--`--'    `-----`---``=`   ``--'--'   `=`   ``--'--'     
+        """
+    )
+    print("Welcome to VanGonography! Please select an option:")
+    print("[1] Hide a file in an image")
+    print("[2] Reveal a hidden file in an image")
+    print("[3] Show the difference between two images")
+    print("[4] Exit")
+    print()
+    
+    while True:
+        choice = input("Enter your choice: ")
         
-        # Go look code for encode_image() to understand how this works
-        with io.BytesIO() as output:
-            Image.fromarray(difference_array).save(output, format="PNG")
-            output.seek(0)
-            with open("Difference.png", "wb") as f:
-                f.write(output.read())
+        if choice == "1":
+            try:
+                # Get the file to hide
+                root = Tk()
+                root.withdraw()
+                file = filedialog.askopenfilename(title="Select file to hide")
+
+                # Check if the user canceled the file selection
+                if not file:
+                    print("File selection canceled.")
+
+                # Get the cover image
+                root = Tk()
+                root.withdraw()
+                image = filedialog.askopenfilename(title="Select cover image")
+
+                # Check if the user canceled the image selection
+                if not image:
+                    print("Image selection canceled.")
+
+                # Check if the selected file is an image
+                if not is_image_file(image):
+                    print("Selected cover image is not a valid image file.")
+
+                # Get the output directory
+                root = Tk()
+                root.withdraw()
+                output_directory = filedialog.askdirectory(title="Select output directory")
                 
-if __name__ == "__main__":
-    # Remember the image with the hidden is always called "Cover.png"
-    
-    # Get the file to hide
-    root = Tk()
-    root.withdraw()
-    file = filedialog.askopenfilename(title="Select file to hide")
-    
-    # Get the cover image
-    root = Tk()
-    root.withdraw()
-    image = filedialog.askopenfilename(title="Select cover image")
-    
-    # Hide the file in the cover image
-    encode_image(file, image)
-    
-    # Differentiate the source and cover images
-    differentiate_image(file, "Cover.png")
+                # Check if the user canceled the output directory selection
+                if not output_directory:
+                    print("Output directory selection canceled.")
+                
+                # Check if the selected output directory is valid
+                if not os.path.isdir(output_directory):
+                    print("Selected output directory is not a valid directory.")
+                
+                # Hide the file in the cover image
+                encode_image(file, image, output_directory)
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                
+        elif choice == "2":
+            try:
+                # Get the image with the hidden file
+                root = Tk()
+                root.withdraw()
+                image = filedialog.askopenfilename(title="Select image with hidden file")
+
+                # Check if the user canceled the image selection
+                if not image:
+                    print("Image selection canceled.")
+
+                # Check if the selected file is an image
+                if not is_image_file(image):
+                    print("Selected image is not a valid image file.")
+
+                # Get the output directory
+                root = Tk()
+                root.withdraw()
+                output_directory = filedialog.askdirectory(title="Select output directory")
+                
+                # Check if the user canceled the output directory selection
+                if not output_directory:
+                    print("Output directory selection canceled.")
+                
+                # Check if the selected output directory is valid
+                if not os.path.isdir(output_directory):
+                    print("Selected output directory is not a valid directory.")
+                
+                # Reveal the hidden file
+                decode_image(image, output_directory)
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                
+        elif choice == "3":
+            try:
+                # Get the source image
+                root = Tk()
+                root.withdraw()
+                source = filedialog.askopenfilename(title="Select source image")
+
+                # Check if the user canceled the image selection
+                if not source:
+                    print("Source image selection canceled.")
+
+                # Check if the selected file is an image
+                if not is_image_file(source):
+                    print("Selected source image is not a valid image file.")
+
+                # Get the cover image
+                root = Tk()
+                root.withdraw()
+                cover = filedialog.askopenfilename(title="Select cover image")
+
+                # Check if the user canceled the image selection
+                if not cover:
+                    print("Cover image selection canceled.")
+
+                # Check if the selected file is an image
+                if not is_image_file(cover):
+                    print("Selected cover image is not a valid image file.")
+
+                # Get the output directory
+                root = Tk()
+                root.withdraw()
+                output_directory = filedialog.askdirectory(title="Select output directory")
+                
+                # Check if the user canceled the output directory selection
+                if not output_directory:
+                    print("Output directory selection canceled.")
+                
+                # Check if the selected output directory is valid
+                if not os.path.isdir(output_directory):
+                    print("Selected output directory is not a valid directory.")
+                
+                # Show the difference between the source and cover images
+                differentiate_image(source, cover, output_directory)
+
+            except Exception as e:
+                print(f"An error occurred: {e}")
+                
+        elif choice == "4":
+            print("Exiting...")
+            return
+        
+        else:
+            print("Invalid choice.")
