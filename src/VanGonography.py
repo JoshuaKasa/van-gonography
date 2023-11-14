@@ -1,5 +1,7 @@
 import os
 import io
+import sys
+import argparse
 
 import numpy as np
 
@@ -270,7 +272,7 @@ def encode_image(file: str, image: str, output_directory: str = None) -> None:
     except Exception as e:
         raise Exception(f"Error adding header to the modified cover image: {e}")
                             
-def decode_image(image, output_directory: str = None) -> None:
+def decode_image(image, output_directory: str = None, open_on_success: bool = False) -> None:
     try:
         # Check if the image file exists
         with open(image, 'rb'):
@@ -312,6 +314,13 @@ def decode_image(image, output_directory: str = None) -> None:
         binary_to_file(binary_string, output_filename)
     except Exception as e:
         raise Exception(f"Error creating output file: {e}")
+    
+    # Open the file if the user wants to
+    if open_on_success:
+        try:
+            os.startfile(output_filename)
+        except Exception as e:
+            raise Exception(f"Error opening output file make sure you have the right program to open it: {e}")
 
 def differentiate_image(source, cover, output_directory: str = None) -> None:
     try:
