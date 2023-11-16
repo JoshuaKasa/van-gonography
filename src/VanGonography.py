@@ -2,6 +2,7 @@ import os
 import io
 import sys
 import argparse
+import logging
 
 import numpy as np
 
@@ -13,6 +14,8 @@ from utils import *
 
 SINGLE_RGB_BIT_SIZE = 8 # Each RGB value is composed of 3 colors, each color is composed of 8 bits
 SINGLE_RGB_PIXEL_BIT_SIZE = SINGLE_RGB_BIT_SIZE * 3 # Each pixel is composed of 3 RGB values, each RGB value is composed of 3 colors, each color is composed of 8 bits
+
+__version__ = "1.1.1-rc"
 
 def add_header(image: str, extension: str, data_length: int, output_directory: str = None) -> None:
     """
@@ -381,165 +384,277 @@ def differentiate_image(source, cover, output_directory: str = None) -> None:
                 
 def main():
     
-    init(autoreset=True)
+    os.system('cls' if os.name == 'nt' else 'clear') # Clear the terminal
     
-    os.system('cls' if os.name == 'nt' else 'clear')
-    print(
-        """
-        ,-.-.  ,---.      .-._            _,---.     _,.---._    .-._          _,.---._         _,---.                ,---.          _ __   ,--.-,,-,--,                             ,-.-. ,-----.--.       _.---.,_         _.---.,_     
- ,--.-./=/ ,/.--.'  \    /==/ \  .-._ _.='.'-,  \  ,-.' , -  `. /==/ \  .-._ ,-.' , -  `.   _.='.'-,  \  .-.,.---.  .--.'  \      .-`.' ,`./==/  /|=|  |,--.-.  .-,--.        ,--.-./=/ ,//` ` - /==/     .'  - , `.-,     .'  - , `.-,   
-/==/, ||=| -|\==\-/\ \   |==|, \/ /, /==.'-     / /==/_,  ,  - \|==|, \/ /, /==/_,  ,  - \ /==.'-     / /==/  `   \ \==\-/\ \    /==/, -   \==|_ ||=|, /==/- / /=/_ /        /==/, ||=| -|`-'-. -|==|    / -  ,  ,_\==\   / -  ,  ,_\==\  
-\==\,  \ / ,|/==/-|_\ |  |==|-  \|  /==/ -   .-' |==|   .=.     |==|-  \|  |==|   .=.     /==/ -   .-' |==|-, .=., |/==/-|_\ |  |==| _ .=. |==| ,|/=| _\==\, \/=/. /         \==\,  \ / ,|    | `|==|   |     .=.   |==| |     .=.   |==| 
- \==\ - ' - /\==\,   - \ |==| ,  | -|==|_   /_,-.|==|_ : ;=:  - |==| ,  | -|==|_ : ;=:  - |==|_   /_,-.|==|   '='  /\==\,   - \ |==| , '=',|==|- `-' _ |\==\  \/ -/           \==\ - ' - /    | -|==|   | -  :=; : _|==| | -  :=; : _|==| 
-  \==\ ,   | /==/ -   ,| |==| -   _ |==|  , \_.' )==| , '='     |==| -   _ |==| , '='     |==|  , \_.' )==|- ,   .' /==/ -   ,| |==|-  '..'|==|  _     | |==|  ,_/             \==\ ,   |     | `|==|   |     `=` , |==| |     `=` , |==| 
-  |==| -  ,//==/-  /\ - \|==|  /\ , \==\-  ,    ( \==\ -    ,_ /|==|  /\ , |\==\ -    ,_ /\==\-  ,    (|==|_  . ,'./==/-  /\ - \|==|,  |   |==|   .-. ,\ \==\-, /              |==| -  ,/   .-','|==| .=.\ _,    - /==/.=.\ _,    - /==/  
-  \==\  _ / \==\ _.\=\.-'/==/, | |- |/==/ _  ,  /  '.='. -   .' /==/, | |- | '.='. -   .'  /==/ _  ,  //==/  /\ ,  )==\ _.\=\.-'/==/ - |   /==/, //=/  | /==/._/               \==\  _ /   /     \==\:=; :`.   - .`=.`:=; :`.   - .`=.`   
-   `--`--'   `--`        `--`./  `--``--`------'     `--`--''   `--`./  `--`   `--`--''    `--`------' `--`-`--`--' `--`        `--`---'   `--`-' `-`--` `--`-`                 `--`--'    `-----`---``=`   ``--'--'   `=`   ``--'--'     
-        """
-    )
-    print()
-    print(Fore.YELLOW + "Version 1.0.0")
-    print("Welcome to VanGonography! Please select an option:")
-    print()
-    print(Fore.LIGHTRED_EX + "[1] " + Fore.WHITE + "Hide a file in an image")
-    print(Fore.LIGHTRED_EX + "[2] " + Fore.WHITE + "Reveal a hidden file in an image")
-    print(Fore.LIGHTRED_EX + "[3] " + Fore.WHITE + "Show the difference between two images")
-    print(Fore.LIGHTRED_EX + "[4] " + Fore.WHITE + "Exit")
-    print()
+    # Argument parser
+    parser = argparse.ArgumentParser(description="Van Gonography is a steganography tool that hides files in images.")
     
-    while True:
-        choice = input("Enter your choice: ")
+    # Optional arguments
+    optional_group = parser.add_argument_group('Optional arguments')
+    optional_group.add_argument("-ood", dest="ood", action="store_true", default=False, help="Open file after decoding from image (default: False)")
+    optional_group.add_argument("-l", "--log", dest="log", type=str, default=False, metavar="LOG_FILE", help="Log file for the program (default: False)")
+    optional_group.add_argument("-cli", dest="cli", action="store_true", default=False, help="Run the program in CLI mode, this means there's not gonna be any menu (default: False)")
+    optional_group.add_argument("-o", "--output", dest="output", type=str, metavar="OUTPUT_DIR", help="Output directory for the modified image or revealed file")
+    optional_group.add_argument("-v", "--version", action="version", version=f"VanGonography v{__version__}", help="Show the version number and exit")
+
+    # Positional arguments group (only used in CLI mode)
+    positional_group = parser.add_argument_group('Positional arguments (only used in CLI mode)')
+    positional_group.add_argument("-s", "--show", dest="show", action="store_true", default=False, help="Show the difference between two images (default: False)")
+    positional_group.add_argument("-e", "--encode", dest="encode", action="store_true", default=False, help="Encode the file in the image (default: False)")
+    positional_group.add_argument("-d", "--decode", dest="decode", action="store_true", default=False, help="Decode the file hidden in the image (default: False)")
+    positional_group.add_argument("-c", "--cover", dest="cover", type=str, metavar="COVER_IMAGE", help="Image to be used for hiding or revealing, positional only when using decoding, encoding or differentiate")
+    positional_group.add_argument("-f", "--file", dest="file", type=str, metavar="HIDDEN_FILE", help="File to be hidden")
+
+    args = parser.parse_args()
+    
+    # Checking for CLI mode
+    if args.cli:
+        # Logging setup 
+        if args.log:
+            # If the user wants to log, we will create the log.log file
+            if args.log == True:
+                args.log = "log.log"
+            
+            logging.basicConfig(
+                filename=args.log,
+                level=logging.DEBUG,
+                format="%(asctime)s - %(levelname)s - %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S"
+            )
+            
+            logging.info("Logging started")
+            logging.info(f"Arguments: {args}")
         
-        if choice == "1":
-            try:
-                # Get the file to hide
-                root = Tk()
-                root.withdraw()
-                file = filedialog.askopenfilename(title="Select file to hide")
-
-                # Check if the user canceled the file selection
-                if not file:
-                    print("File selection canceled.")
-
-                # Get the cover image
-                root = Tk()
-                root.withdraw()
-                image = filedialog.askopenfilename(title="Select cover image")
-
-                # Check if the user canceled the image selection
-                if not image:
-                    print("Image selection canceled.")
-
-                # Check if the selected file is an image
-                if not is_image_file(image):
-                    print("Selected cover image is not a valid image file.")
-
-                # Get the output directory
-                root = Tk()
-                root.withdraw()
-                output_directory = filedialog.askdirectory(title="Select output directory")
-                
-                # Check if the user canceled the output directory selection
-                if not output_directory:
-                    print("Output directory selection canceled.")
-                
-                # Check if the selected output directory is valid
-                if not os.path.isdir(output_directory):
-                    print("Selected output directory is not a valid directory.")
-                
-                # Hide the file in the cover image
-                encode_image(file, image, output_directory)
-
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                
-        elif choice == "2":
-            try:
-                # Get the image with the hidden file
-                root = Tk()
-                root.withdraw()
-                image = filedialog.askopenfilename(title="Select image with hidden file")
-
-                # Check if the user canceled the image selection
-                if not image:
-                    print("Image selection canceled.")
-
-                # Check if the selected file is an image
-                if not is_image_file(image):
-                    print("Selected image is not a valid image file.")
-
-                # Get the output directory
-                root = Tk()
-                root.withdraw()
-                output_directory = filedialog.askdirectory(title="Select output directory")
-                
-                # Check if the user canceled the output directory selection
-                if not output_directory:
-                    print("Output directory selection canceled.")
-                
-                # Check if the selected output directory is valid
-                if not os.path.isdir(output_directory):
-                    print("Selected output directory is not a valid directory.")
-                
-                # Reveal the hidden file
-                decode_image(image, output_directory)
-
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                
-        elif choice == "3":
-            try:
-                # Get the source image
-                root = Tk()
-                root.withdraw()
-                source = filedialog.askopenfilename(title="Select source image")
-
-                # Check if the user canceled the image selection
-                if not source:
-                    print("Source image selection canceled.")
-
-                # Check if the selected file is an image
-                if not is_image_file(source):
-                    print("Selected source image is not a valid image file.")
-
-                # Get the cover image
-                root = Tk()
-                root.withdraw()
-                cover = filedialog.askopenfilename(title="Select cover image")
-
-                # Check if the user canceled the image selection
-                if not cover:
-                    print("Cover image selection canceled.")
-
-                # Check if the selected file is an image
-                if not is_image_file(cover):
-                    print("Selected cover image is not a valid image file.")
-
-                # Get the output directory
-                root = Tk()
-                root.withdraw()
-                output_directory = filedialog.askdirectory(title="Select output directory")
-                
-                # Check if the user canceled the output directory selection
-                if not output_directory:
-                    print("Output directory selection canceled.")
-                
-                # Check if the selected output directory is valid
-                if not os.path.isdir(output_directory):
-                    print("Selected output directory is not a valid directory.")
-                
-                # Show the difference between the source and cover images
-                differentiate_image(source, cover, output_directory)
-
-            except Exception as e:
-                print(f"An error occurred: {e}")
-                
-        elif choice == "4":
-            print("Exiting...")
+        # CLI mode starts here
+        if args.cover: # Checking if a cover image is given (essential for both decoding and encoding)
+            # Is the user choosing to encode or decode?
+            if args.encode: # Encode
+                # Checking if a file to hide is given
+                if not args.file:
+                    print("You must insert the file to hide")
+                    logging.error("No file to hide was given")
+                    return
+                try:
+                    logging.info("Encoding started") # Logging the start
+                    logging.info(f"Encoding {args.file} in {args.cover}") # Logging the file and cover image
+                    
+                    encode_image(args.file, args.cover, args.output)
+                    
+                    print(f"File hidden successfully in {args.cover}.") 
+                    logging.info(f"File hidden successfully in {args.cover}.") # Logging the success message, this is also useful for checking the time it took to hide the file
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    logging.error(f"An error occurred: {e}")
+                    
+            # Checking for decode
+            elif args.decode:
+                if args.file:
+                    print("You can't insert the file you must only insert the image with the hidden file and optionally the output directory.")
+                    logging.error("A file to hide was given, but you must only insert the image with the hidden file and optionally the output directory.")
+                    
+                try:
+                    logging.info("Decoding started") # Logging the start
+                    logging.info(f"Decoding {args.cover}") # Logging the cover image
+                    
+                    decode_image(args.cover, args.output, args.ood)
+                    
+                    print(f"File revealed successfully from {args.cover}.")
+                    logging.info(f"File revealed successfully from {args.cover}.") # Same as above
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    logging.error(f"An error occurred: {e}")
+                    
+            # Checking for differentiating images
+            elif args.show:
+                if args.file:
+                    print("You can't insert the file to hide you must only insert the source and cover images and optionally the output directory.")
+                    logging.error("A file to hide was given, but you must only insert the source and cover images and optionally the output directory.")
+                try:
+                    logging.info("Differentiating started") # Logging the start
+                    logging.info(f"Differentiating {args.cover} and {args.file}") # Logging the source and cover images
+                    
+                    differentiate_image(args.cover, args.output)
+                    
+                    print(f"Difference image saved successfully as Difference.png.")
+                    logging.info(f"Difference image saved successfully as Difference.png.") # Again, same as above
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    logging.error(f"An error occurred: {e}")
+                    
+            # Something's wrong
+            else:
+                print("Invalid arguments.")
+                logging.error("Invalid arguments, you must choose a mode to run the program in between encode, decode and show.")
+        else:
+            print("You must insert all the required arguments, no cover image was given, use -h for help.")
+            logging.error("No cover image was given, for checking all the arguments use -h in CLI mode.")
+    
+    # Using UI mode if no arguments are given
+    else:
+        
+        # Checking if any arguments are given
+        if args.show or args.encode or args.decode or args.output or args.cover or args.file:
+            print("You can't use arguments in UI mode.")
             return
         
-        else:
-            print("Invalid choice.")
+        # UI mode
+        init(autoreset=True)
+        print(
+            """
+            ,-.-.  ,---.      .-._            _,---.     _,.---._    .-._          _,.---._         _,---.                ,---.          _ __   ,--.-,,-,--,                             ,-.-. ,-----.--.       _.---.,_         _.---.,_     
+    ,--.-./=/ ,/.--.'  \    /==/ \  .-._ _.='.'-,  \  ,-.' , -  `. /==/ \  .-._ ,-.' , -  `.   _.='.'-,  \  .-.,.---.  .--.'  \      .-`.' ,`./==/  /|=|  |,--.-.  .-,--.        ,--.-./=/ ,//` ` - /==/     .'  - , `.-,     .'  - , `.-,   
+    /==/, ||=| -|\==\-/\ \   |==|, \/ /, /==.'-     / /==/_,  ,  - \|==|, \/ /, /==/_,  ,  - \ /==.'-     / /==/  `   \ \==\-/\ \    /==/, -   \==|_ ||=|, /==/- / /=/_ /        /==/, ||=| -|`-'-. -|==|    / -  ,  ,_\==\   / -  ,  ,_\==\  
+    \==\,  \ / ,|/==/-|_\ |  |==|-  \|  /==/ -   .-' |==|   .=.     |==|-  \|  |==|   .=.     /==/ -   .-' |==|-, .=., |/==/-|_\ |  |==| _ .=. |==| ,|/=| _\==\, \/=/. /         \==\,  \ / ,|    | `|==|   |     .=.   |==| |     .=.   |==| 
+    \==\ - ' - /\==\,   - \ |==| ,  | -|==|_   /_,-.|==|_ : ;=:  - |==| ,  | -|==|_ : ;=:  - |==|_   /_,-.|==|   '='  /\==\,   - \ |==| , '=',|==|- `-' _ |\==\  \/ -/           \==\ - ' - /    | -|==|   | -  :=; : _|==| | -  :=; : _|==| 
+    \==\ ,   | /==/ -   ,| |==| -   _ |==|  , \_.' )==| , '='     |==| -   _ |==| , '='     |==|  , \_.' )==|- ,   .' /==/ -   ,| |==|-  '..'|==|  _     | |==|  ,_/             \==\ ,   |     | `|==|   |     `=` , |==| |     `=` , |==| 
+    |==| -  ,//==/-  /\ - \|==|  /\ , \==\-  ,    ( \==\ -    ,_ /|==|  /\ , |\==\ -    ,_ /\==\-  ,    (|==|_  . ,'./==/-  /\ - \|==|,  |   |==|   .-. ,\ \==\-, /              |==| -  ,/   .-','|==| .=.\ _,    - /==/.=.\ _,    - /==/  
+    \==\  _ / \==\ _.\=\.-'/==/, | |- |/==/ _  ,  /  '.='. -   .' /==/, | |- | '.='. -   .'  /==/ _  ,  //==/  /\ ,  )==\ _.\=\.-'/==/ - |   /==/, //=/  | /==/._/               \==\  _ /   /     \==\:=; :`.   - .`=.`:=; :`.   - .`=.`   
+    `--`--'   `--`        `--`./  `--``--`------'     `--`--''   `--`./  `--`   `--`--''    `--`------' `--`-`--`--' `--`        `--`---'   `--`-' `-`--` `--`-`                 `--`--'    `-----`---``=`   ``--'--'   `=`   ``--'--'     
+            """
+        )
+        print()
+        print(Fore.YELLOW + "Version 1.0.0")
+        print("Welcome to VanGonography! Please select an option:")
+        print()
+        print(Fore.LIGHTRED_EX + "[1] " + Fore.WHITE + "Hide a file in an image")
+        print(Fore.LIGHTRED_EX + "[2] " + Fore.WHITE + "Reveal a hidden file in an image")
+        print(Fore.LIGHTRED_EX + "[3] " + Fore.WHITE + "Show the difference between two images")
+        print(Fore.LIGHTRED_EX + "[4] " + Fore.WHITE + "Exit")
+        print()
+        
+        while True:
+            choice = input("Enter your choice: ")
+            
+            if choice == "1":
+                try:
+                    # Get the file to hide
+                    root = Tk()
+                    root.withdraw()
+                    file = filedialog.askopenfilename(title="Select file to hide")
+
+                    # Check if the user canceled the file selection
+                    if not file:
+                        print("File selection canceled.")
+
+                    # Get the cover image
+                    root = Tk()
+                    root.withdraw()
+                    image = filedialog.askopenfilename(title="Select cover image")
+
+                    # Check if the user canceled the image selection
+                    if not image:
+                        print("Image selection canceled.")
+
+                    # Check if the selected file is an image
+                    if not is_image_file(image):
+                        print("Selected cover image is not a valid image file.")
+
+                    # Get the output directory
+                    root = Tk()
+                    root.withdraw()
+                    output_directory = filedialog.askdirectory(title="Select output directory")
+                    
+                    # Check if the user canceled the output directory selection
+                    if not output_directory:
+                        print("Output directory selection canceled.")
+                    
+                    # Check if the selected output directory is valid
+                    if not os.path.isdir(output_directory):
+                        print("Selected output directory is not a valid directory.")
+                    
+                    # Hide the file in the cover image
+                    encode_image(file, image, output_directory)
+
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    
+            elif choice == "2":
+                try:
+                    # Get the image with the hidden file
+                    root = Tk()
+                    root.withdraw()
+                    image = filedialog.askopenfilename(title="Select image with hidden file")
+
+                    # Check if the user canceled the image selection
+                    if not image:
+                        print("Image selection canceled.")
+
+                    # Check if the selected file is an image
+                    if not is_image_file(image):
+                        print("Selected image is not a valid image file.")
+
+                    # Get the output directory
+                    root = Tk()
+                    root.withdraw()
+                    output_directory = filedialog.askdirectory(title="Select output directory")
+                    
+                    # Check if the user canceled the output directory selection
+                    if not output_directory:
+                        print("Output directory selection canceled.")
+                    
+                    # Check if the selected output directory is valid
+                    if not os.path.isdir(output_directory):
+                        print("Selected output directory is not a valid directory.")
+                    
+                    # Reveal the hidden file
+                    decode_image(image, output_directory)
+
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    
+            elif choice == "3":
+                try:
+                    # Get the source image
+                    root = Tk()
+                    root.withdraw()
+                    source = filedialog.askopenfilename(title="Select source image")
+
+                    # Check if the user canceled the image selection
+                    if not source:
+                        print("Source image selection canceled.")
+
+                    # Check if the selected file is an image
+                    if not is_image_file(source):
+                        print("Selected source image is not a valid image file.")
+
+                    # Get the cover image
+                    root = Tk()
+                    root.withdraw()
+                    cover = filedialog.askopenfilename(title="Select cover image")
+
+                    # Check if the user canceled the image selection
+                    if not cover:
+                        print("Cover image selection canceled.")
+
+                    # Check if the selected file is an image
+                    if not is_image_file(cover):
+                        print("Selected cover image is not a valid image file.")
+
+                    # Get the output directory
+                    root = Tk()
+                    root.withdraw()
+                    output_directory = filedialog.askdirectory(title="Select output directory")
+                    
+                    # Check if the user canceled the output directory selection
+                    if not output_directory:
+                        print("Output directory selection canceled.")
+                    
+                    # Check if the selected output directory is valid
+                    if not os.path.isdir(output_directory):
+                        print("Selected output directory is not a valid directory.")
+                    
+                    # Show the difference between the source and cover images
+                    differentiate_image(source, cover, output_directory)
+
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    
+            elif choice == "4":
+                print("Exiting...")
+                return
+            
+            else:
+                print("Invalid choice.")
             
 if __name__ == '__main__':
     main()
