@@ -53,7 +53,7 @@ For running the program in the CLI mode (more complicated but with a bit more fu
 python vangonography.py -cli
 ```
 You can then use the following arguments along with it:
-```
+```console
 usage: vangonography.py [-h] [-ood] [-l LOG_FILE] [-cli] [-o OUTPUT_DIR] [-v] [-s] [-e] [-d] [-c COVER_IMAGE]
                         [-f HIDDEN_FILE]
 
