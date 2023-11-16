@@ -42,11 +42,56 @@ pip install -r requirements.txt
 
 # Usage
 
-```bash
-# Run the script
-python vangonography.py
+For running the program in the UI mode (simpler and easier to use but also less useful for developers) just run the following command:
 
-# Follow the instructions, everything is written in the title of the file selection window
+```bash
+python vangonography.py
+```
+
+For running the program in the CLI mode (more complicated but with a bit more functionalities) just run the following command:
+```bash
+python vangonography.py -cli
+```
+You can then use the following arguments along with it:
+```
+usage: vangonography.py [-h] [-ood] [-l LOG_FILE] [-cli] [-o OUTPUT_DIR] [-v] [-s] [-e] [-d] [-c COVER_IMAGE]
+                        [-f HIDDEN_FILE]
+
+Van Gonography is a steganography tool that hides files in images.
+
+options:
+  -h, --help            show this help message and exit
+
+Optional arguments:
+  -ood                  Open file after decoding from image (default: False)
+  -l LOG_FILE, --log LOG_FILE
+                        Log file for the program (default: False)
+  -cli                  Run the program in CLI mode, this means there's not gonna be any menu (default: False)
+  -o OUTPUT_DIR, --output OUTPUT_DIR
+                        Output directory for the modified image or revealed file
+  -v, --version         Show the version number and exit
+
+Positional arguments (only used in CLI mode):
+  -s, --show            Show the difference between two images (default: False)
+  -e, --encode          Encode the file in the image (default: False)
+  -d, --decode          Decode the file hidden in the image (default: False)
+  -c COVER_IMAGE, --cover COVER_IMAGE
+                        Image to be used for hiding or revealing, positional only when using decoding, encoding or
+                        differentiate
+  -f HIDDEN_FILE, --file HIDDEN_FILE
+                        File to be hidden
+```
+For example, if you want to hide a file called `secret.txt` inside an image called `image.png` and you want to save the modified image in a folder called `output` you would run the following command:
+```bash
+python vangonography.py -cli -e -c [Absolute path to your `image.png` cover image] -f [Absolute path to your `secret.txt` file] -o Output
+```
+This will create a directory called `Output` in the same directory as the program and inside it will be a file called `Cover_txt.png` which will be the modified image with the hidden file inside it. If you want to decode the file from the image you would run the following command:
+```bash
+python vangonography.py -cli -d -c [Absolute path (or not) to your `Cover_txt.png` cover image] -o Output
+```
+If you also want to create a log.log file with all the information about the program you can run the following command:
+```bash
+python vangonography.py -cli -d -c [Absolute path (or not) to your `Cover_txt.png` cover image] -o Output -l
 ```
 
 # License
