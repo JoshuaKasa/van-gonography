@@ -18,6 +18,7 @@
 # Table of Contents
 
 - [Introduction](#introduction)
+- [How it works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
 - [License](#license)
@@ -25,7 +26,25 @@
 
 # Introduction
 
-I've recently had this amazing idea of how could it would be to hide an entire file inside an image, I thought I would've been the first in history to come up with this idea, but of course... I wasn't. I did some research and found out that this technique is called [steganography](https://en.wikipedia.org/wiki/Steganography) and it's been around for a while now. The general idea behing it is built all around the fact that images, are composed by bits and every bit is composed by 3 channels that make up the color for that pixel, which are called RGB (Red, Green, Blue). Each channel is composed by 8 bits, which means that each channel can have 256 different values, which means that each pixel can have 256^3 different colors, WHICH MEANS... that each pixel can have 16,777,216 different colors. That's A LOT of colors, and that's why we can hide data inside images, because we can change the color of a pixel by just a little bit and the human eye won't even be able to notice the difference. You know another cool thing? Text files are all made up of bits, therefore, we can substitute the 2 last bits of the color channels of each pixel with the bits of a text file and the image will still look the same, but the text file will be hidden inside the image. 
+I've recently had this amazing idea of how could it would be to hide an entire file inside an image, I thought I would've been the first in history to come up with this idea, but of course... I wasn't. <br>
+I did some research and found out that this technique is called [steganography](https://en.wikipedia.org/wiki/Steganography) and it's been around for a while now. The general idea behing it is built all around the fact that images, are composed by bits and every bit is composed by 3 channels that make up the color for that pixel, which are called RGB (Red, Green, Blue). Each channel is composed by 8 bits, which means that each channel can have 256 different values, which means that each pixel can have 256^3 different colors, WHICH MEANS... that each pixel can have 16,777,216 different colors. <br>
+That's A LOT of colors, and that's why we can hide data inside images, because we can change the color of a pixel by just a little bit and the human eye won't even be able to notice the difference. You know another cool thing? Text files are all made up of bits, therefore, we can substitute the 2 last bits of the color channels of each pixel with the bits of a text file and the image will still look the same, but the text file will be hidden inside the image. 
+
+# How it works
+
+Right now, you might be wondering how an entire file can stay inside an image without changing its appearance. Well, it's actually pretty simple.
+
+If you don't know, every file inside your computer, from .exe to .jpg, is stored using bits, which are literally just 1s and 0s. For example, the letter `A` is stored as `01000001`, and the letter `B` is stored as `01000010`. This means that your 1 gigabyte porn video is actually just stored as a bunch of 1s and 0s! To be exact:
+
+\[ \text{Size} = 1 \, \text{GB} \times 1024 \, \text{MB/GB} \times 1024 \, \text{KB/MB} \times 1024 \, \text{bytes/KB} \times 8 \, \text{bits/byte} \]
+
+\[ \text{Size} = 8,589,934,592 \, \text{bits} \]
+
+Now, another very important thing to know is that images are made up of pixels, and each pixel gets its color from a format called RGB (Red, Green, Blue). Each of those letters corresponds to a channel, numbered from 0 to 255 (1 byte), meaning each channel can have 256 different values.
+
+These numbers can also be represented in binary, with each channel composed of 8 bits. Let's say we have a pixel with the color `(0xFF, 0x00, 0x00)`, which is red (because we are modifying the first channel, which is R, red). This means that the pixel is composed of the following bits: `11111111 00000000 00000000`. As files are also composed of bits, we can take the first 2 bits of a file and substitute them with the first 2 bits of a channel, resulting in: `11111111 00000000 00000011`. Repeat this process for every pixel in the image, and for every bit in the file, to hide the file inside the image without changing its appearance.
+
+And there you have it! That's how you hide a file inside an image. Now, if you want to know how to do it in Python, you can check out the code in this repository, it's pretty simple and easy to understand.
 
 # Installation
 
