@@ -36,9 +36,9 @@ Right now, you might be wondering how an entire file can stay inside an image wi
 
 If you don't know, every file inside your computer, from .exe to .jpg, is stored using bits, which are literally just 1s and 0s. For example, the letter `A` is stored as `01000001`, and the letter `B` is stored as `01000010`. This means that your 1 gigabyte porn video is actually just stored as a bunch of 1s and 0s! To be exact:
 
-\[ \text{Size} = 1 \, \text{GB} \times 1024 \, \text{MB/GB} \times 1024 \, \text{KB/MB} \times 1024 \, \text{bytes/KB} \times 8 \, \text{bits/byte} \]
+$$\[ \text{Size} = 1 \, \text{GB} \times 1024 \, \text{MB/GB} \times 1024 \, \text{KB/MB} \times 1024 \, \text{bytes/KB} \times 8 \, \text{bits/byte} \]$$
 
-\[ \text{Size} = 8,589,934,592 \, \text{bits} \]
+$\[ \text{Size} = 8,589,934,592 \, \text{bits} \]$
 
 Now, another very important thing to know is that images are made up of pixels, and each pixel gets its color from a format called RGB (Red, Green, Blue). Each of those letters corresponds to a channel, numbered from 0 to 255 (1 byte), meaning each channel can have 256 different values.
 
