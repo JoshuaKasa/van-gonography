@@ -47,13 +47,6 @@ These numbers can also be represented in binary, with each channel composed of 8
 And there you have it! That's how you hide a file inside an image. Now, if you want to know how to do it in Python, you can check out the code in this repository, it's pretty simple and easy to understand.
 
 We can also see this as a simple matrix operation:
-\documentclass{article}
-\usepackage{amsmath}
-
-\begin{document}
-
-We can also see this as a simple matrix operation:
-
 Let $I$ be a matrix representing an image, where each element $p_{ij}$ corresponds to a pixel value represented as a hexadecimal number $pv$. This hexadecimal number is decomposed into three channels $R$ (red), $G$ (green), and $B$ (blue), each consisting of values in the range $[0, 255)$.
 
 Consider a file $F$, where each bit is denoted by $b$. Let $\{p_{i,j}^{(l)}\}$ represent a series of pixels in the image, where $i$ is the x-coordinate, $j$ is the y-coordinate, and $l$ is the length of the series.
@@ -62,17 +55,16 @@ Define the operation $\mathcal{B}$ that extracts 2 bits from each $p_{ij}^{(l)}$
 
 This can be expressed as follows:
 
-$$
+$$\
 \begin{align*}
-\mathcal{B}: \{p_{ij}^{(l)}\} &\rightarrow \{p_{ij}^{(l)}\}, \text{ where} \\
+\mathcal{B}: \{p_{ij}^{(l)}\} &\rightarrow \{p_{ij}^{(l)}\} \text{, where} \\
 p_{ij}^{(l)} &= (p_{ij}^{(l)R}, p_{ij}^{(l)G}, p_{ij}^{(l)B}) \\
-\mathcal{B}(x) &= x \bmod 4 \\
+\mathcal{B}(x) &= x \% 4 \quad \\
 \text{For } k &= 1, 2, \ldots, n, \text{ the operation is given by} \\
-&\quad b_k \rightarrow \mathcal{B}(p_{ij}^{(l)B_k}) = \sum_{k=1}^{n} \mathcal{B}(p_{ij}^{(l)B_k})
+&\quad b_k \rightarrow \mathcal{B}(p_{ij}^{(l)B_k})=\\
+&\quad \sum_{k=1}^{n} \mathcal{B}(p_{ij}^{(l)B_k})
 \end{align*}
-
-\end{document}
-$$
+\$$
 
 # Installation
 
