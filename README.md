@@ -59,7 +59,7 @@ $$
 \begin{align*}
 \mathcal{B}: \{p_{ij}^{(l)}\} &\rightarrow \{p_{ij}^{(l)}\} \text{, where} \\
 p_{ij}^{(l)} &= (p_{ij}^{(l)R}, p_{ij}^{(l)G}, p_{ij}^{(l)B}) \\
-\mathcal{B}(x) &= x \% 4 \quad \\
+\mathcal{B}(x) &= x \mod\ 4 \quad \\
 \text{For } k &= 1, 2, \ldots, n, \text{ the operation is given by} \\
 &\quad b_k \rightarrow \mathcal{B}(p_{ij}^{(l)B_k})=\\
 &\quad \sum_{k=1}^{n} \mathcal{B}(p_{ij}^{(l)B_k})
