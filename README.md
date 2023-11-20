@@ -55,7 +55,7 @@ Define the operation $\mathcal{B}$ that extracts 2 bits from each $p_{ij}^{(l)}$
 
 This can be expressed as follows:
 
-$$\
+$$
 \begin{align*}
 \mathcal{B}: \{p_{ij}^{(l)}\} &\rightarrow \{p_{ij}^{(l)}\} \text{, where} \\
 p_{ij}^{(l)} &= (p_{ij}^{(l)R}, p_{ij}^{(l)G}, p_{ij}^{(l)B}) \\
@@ -64,7 +64,7 @@ p_{ij}^{(l)} &= (p_{ij}^{(l)R}, p_{ij}^{(l)G}, p_{ij}^{(l)B}) \\
 &\quad b_k \rightarrow \mathcal{B}(p_{ij}^{(l)B_k})=\\
 &\quad \sum_{k=1}^{n} \mathcal{B}(p_{ij}^{(l)B_k})
 \end{align*}
-\$$
+$$
 
 # Installation
 
