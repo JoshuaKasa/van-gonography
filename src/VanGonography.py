@@ -10,6 +10,7 @@ from PIL import Image
 from colorama import Fore, init
 from tkinter import Tk, filedialog
 from __version__ import __version__
+from cryptography.fernet import Fernet
 
 from utils import *
 
@@ -100,7 +101,6 @@ def add_header(image: str, extension: str, data_length: int, output_directory: s
         # Get the bits of the data length that will be stored in the current pixel
         data_length_bits = data_length_binary[(i - starting_index) * pixel_bits_used : (i - starting_index + 1) * pixel_bits_used].ljust(pixel_bits_used, '0')
 
-        
         # Convert the bits to an integer
         data_length_int = int(data_length_bits, 2)
         
@@ -198,7 +198,7 @@ def get_header(image: str) -> dict:
     }
 
 # Getting the RGB of each pixel in the cover image, then converting it to binary and modifying the LSB
-def encode_image(file: str, image: str, output_directory: str = None) -> None:
+def encode_image(file: str, image: str, output_directory: str = None, encrypt: bool = False) -> None:
     try:
         # Check if the file to hide exists
         with open(file, 'rb') as f:
@@ -217,6 +217,19 @@ def encode_image(file: str, image: str, output_directory: str = None) -> None:
     with open(file, "rb") as f:
         data = "".join([f"{byte:08b}" for byte in f.read()])
     data_length = len(data)
+    
+    # If the user wants to encrypt the data (python vangonography.py -cli -e --encrypt -f tests/input/Test.txt -o C:\Users\jizos\Desktop -c ..\img\Cat.jpg)
+    if encrypt:
+        key = Fernet.generate_key() # Generate a key for encryption
+        with open("key.key", "wb") as key_file:
+            key_file.write(f"This is your encryption key, keep it safe, you will need it to decrypt the data: {key}".encode()) # Write the key to a file
+        # Encrypt the data
+        try:
+            f = Fernet(key) # Create a Fernet object
+            data = f.encrypt(data.encode()) # Encrypt the data
+            data = "".join([f"{byte:08b}" for byte in data]) # Convert the data back to binary (Fernet encrypts the data and converts it to bytes)
+        except Exception as e:
+            raise Exception(f"Error encrypting the data: {e}")
 
     # Get the extension of the file to hide
     extension = os.path.splitext(file)[1][1:]
@@ -257,9 +270,11 @@ def encode_image(file: str, image: str, output_directory: str = None) -> None:
                     data_index += 2  # Increment the data index by 2 because we're processing 2 bits at a time
                 else:
                     break
-
+                
     # Save the modified cover image as "Cover_{extension}.png"
     output_filename = f"Cover_{extension}.png"
+    if encrypt:
+        output_filename = f"Cover_{extension}_encrypted.png"
     if output_directory:
         output_filename = os.path.join(output_directory, output_filename)
     
@@ -274,7 +289,7 @@ def encode_image(file: str, image: str, output_directory: str = None) -> None:
     except Exception as e:
         raise Exception(f"Error adding header to the modified cover image: {e}")
                             
-def decode_image(image, output_directory: str = None, open_on_success: bool = False) -> None:
+def decode_image(image, output_directory: str = None, open_on_success: bool = False, decrypt: bool = False, key: str = None) -> None:
     try:
         # Check if the image file exists
         with open(image, 'rb'):
@@ -305,6 +320,17 @@ def decode_image(image, output_directory: str = None, open_on_success: bool = Fa
         for i in range(1, width) for j in range(height) if data_length > 0
     ])
     binary_string = binary_string[:data_length]  # Truncate the binary string to the length of the data
+    
+    # If the user wants to decrypt the data
+    if decrypt:
+        if not key:
+            # Additional error checking
+            raise ValueError("No key was given, you must give a key to decrypt the data.") # Check if the user gave a key
+        try:
+            f = Fernet(key) # Create a Fernet object
+            binary_string = f.decrypt(binary_string.encode()) # Decrypt the data
+        except Exception as e:
+            raise Exception(f"Error decrypting the data: {e}")
 
     # Saving the file
     output_filename = f"Output.{extension}"
@@ -395,7 +421,10 @@ def main():
     optional_group.add_argument("-cli", dest="cli", action="store_true", default=False, help="Run the program in CLI mode, this means there's not gonna be any menu (default: False)")
     optional_group.add_argument("-o", "--output", dest="output", type=str, metavar="OUTPUT_DIR", help="Output directory for the modified image or revealed file")
     optional_group.add_argument("-v", "--version", action="version", version=f"VanGonography v{__version__}", help="Show the version number and exit")
-
+    optional_group.add_argument("--encrypt", dest="encrypt", action="store_true", default=False, help="Encrypt the data before hiding it (default: False)")
+    optional_group.add_argument("--decrypt", dest="decrypt", action="store_true", default=False, help="Decrypt the data after revealing it (default: False)")
+    optional_group.add_argument("--key", dest="key", type=str, metavar="KEY", help="Key to decrypt the data (default: None)")
+    
     # Positional arguments group (only used in CLI mode)
     positional_group = parser.add_argument_group('Positional arguments (only used in CLI mode)')
     positional_group.add_argument("-s", "--show", dest="show", action="store_true", default=False, help="Show the difference between two images (default: False)")
@@ -426,6 +455,17 @@ def main():
         
         # CLI mode starts here
         if args.cover: # Checking if a cover image is given (essential for both decoding and encoding)
+            
+            # Full error checking for encryption and decryption
+            if args.encrypt and args.decrypt:
+                print("You can't encrypt and decrypt at the same time, choose one.")
+                logging.error("You can't encrypt and decrypt at the same time, choose one.")
+                return
+            elif args.decrypt and not args.key:
+                print("You must give a key to decrypt the data.")
+                logging.error("No key was given, you must give a key to decrypt the data.")
+                return
+            
             # Is the user choosing to encode or decode?
             if args.encode: # Encode
                 # Checking if a file to hide is given
@@ -437,7 +477,7 @@ def main():
                     logging.info("Encoding started") # Logging the start
                     logging.info(f"Encoding {args.file} in {args.cover}") # Logging the file and cover image
                     
-                    encode_image(args.file, args.cover, args.output)
+                    encode_image(args.file, args.cover, args.output, args.encrypt) # Encoding the file
                     
                     print(f"File hidden successfully in {args.cover}.") 
                     logging.info(f"File hidden successfully in {args.cover}.") # Logging the success message, this is also useful for checking the time it took to hide the file
@@ -455,7 +495,7 @@ def main():
                     logging.info("Decoding started") # Logging the start
                     logging.info(f"Decoding {args.cover}") # Logging the cover image
                     
-                    decode_image(args.cover, args.output, args.ood)
+                    decode_image(args.cover, args.output, args.ood, args.decrypt, args.key) # Decoding the file
                     
                     print(f"File revealed successfully from {args.cover}.")
                     logging.info(f"File revealed successfully from {args.cover}.") # Same as above
