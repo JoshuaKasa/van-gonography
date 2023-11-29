@@ -1,8 +1,8 @@
 #### <p align="center">Hide any type of files inside a image of your choice</p>
 
-<div style="text-align:center">
+<p align="center">
   <img src="img/Logo.jpg" alt="Logo" width="40%"/>
-</div>
+</p>
 
 <p align="center">
   <a href="LICENSE">
