@@ -1,6 +1,8 @@
 #### <p align="center">Hide any type of files inside a image of your choice</p>
 
-![Terminal image](img/Terminal.png)
+<div style="text-align:center">
+  <img src="img/Logo.jpg" alt="Logo" width="40%"/>
+</div>
 
 <p align="center">
   <a href="LICENSE">
