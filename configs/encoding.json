@@ -1,0 +1,9 @@
+{
+    "desc": "This is a sample config file for encoding a .txt file inside one of the cover images provided in the img folder and includes the logging option.",
+    "cli": true,
+    "encode": true,
+    "output": "",
+    "log": true,
+    "file": "tests/input/Test.txt",
+    "cover": "../img/Cat.jpg"
+}

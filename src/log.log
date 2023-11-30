@@ -1,0 +1,7 @@
+2023-11-30 22:08:40 - INFO - Logging started
+2023-11-30 22:08:40 - INFO - Arguments: Namespace(ood=False, log='log.log', cli=True, output='', encrypt=False, decrypt=False, key=None, json='options.json', show=False, encode=True, decode=False, cover='../img/Cat.jpg', file='tests/input/Test.txt')
+2023-11-30 22:08:40 - INFO - Encoding started
+2023-11-30 22:08:40 - INFO - Encoding tests/input/Test.txt in ../img/Cat.jpg
+2023-11-30 22:08:40 - DEBUG - STREAM b'IHDR' 16 13
+2023-11-30 22:08:40 - DEBUG - STREAM b'IDAT' 41 65536
+2023-11-30 22:08:40 - INFO - File hidden successfully in ../img/Cat.jpg.

@@ -47,6 +47,8 @@
 - **Encryption:** Encrypt the hidden file with a password of your choice *(coming soon)*.
 - **Compression:** Compress the hidden file to reduce its size *(coming soon)*.
 - **Multiple Files:** Hide multiple files inside an image *(coming soon)*.
+- **Stealth Mode:** Hide the fact that the image contains a hidden file *(coming soon)*.
+- **User settings:** Save your preferences for future use *(coming soon)*.
 
 # How it works
 
@@ -111,7 +113,7 @@ python vangonography.py -cli
 ```
 You can then use the following arguments along with it:
 ```console
-usage: vangonography.py [-h] [-ood] [-l LOG_FILE] [-cli] [-o OUTPUT_DIR] [-v] [-s] [-e] [-d] [-c COVER_IMAGE]
+usage: vangonography.py [-h] [-ood] [-l] [-cli] [-o OUTPUT_DIR] [-v] [--encrypt] [--decrypt] [--key KEY] [--json JSON_FILE] [--stealth] [-s] [-e] [-d] [-c COVER_IMAGE]
                         [-f HIDDEN_FILE]
 
 Van Gonography is a steganography tool that hides files in images.
@@ -121,20 +123,23 @@ options:
 
 Optional arguments:
   -ood                  Open file after decoding from image (default: False)
-  -l LOG_FILE, --log LOG_FILE
-                        Log file for the program (default: False)
+  -l, --log             Log file for the program (default: False)
   -cli                  Run the program in CLI mode, this means there's not gonna be any menu (default: False)
   -o OUTPUT_DIR, --output OUTPUT_DIR
                         Output directory for the modified image or revealed file
   -v, --version         Show the version number and exit
+  --encrypt             Encrypt the data before hiding it (default: False)
+  --decrypt             Decrypt the data after revealing it (default: False)
+  --key KEY             Key to decrypt the data (default: None)
+  --json JSON_FILE      JSON file containing the arguments (default: None)
+  --stealth             Hides the file in stealth mode (default: False)
 
 Positional arguments (only used in CLI mode):
   -s, --show            Show the difference between two images (default: False)
   -e, --encode          Encode the file in the image (default: False)
   -d, --decode          Decode the file hidden in the image (default: False)
   -c COVER_IMAGE, --cover COVER_IMAGE
-                        Image to be used for hiding or revealing, positional only when using decoding, encoding or
-                        differentiate
+                        Image to be used for hiding or revealing, positional only when using decoding, encoding or differentiate
   -f HIDDEN_FILE, --file HIDDEN_FILE
                         File to be hidden
 ```

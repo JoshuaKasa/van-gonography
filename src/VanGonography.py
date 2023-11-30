@@ -1,6 +1,7 @@
 import os
 import io
 import sys
+import json
 import logging
 import argparse
 
@@ -417,13 +418,16 @@ def main():
     # Optional arguments
     optional_group = parser.add_argument_group('Optional arguments')
     optional_group.add_argument("-ood", dest="ood", action="store_true", default=False, help="Open file after decoding from image (default: False)")
-    optional_group.add_argument("-l", "--log", dest="log", type=str, default=False, metavar="LOG_FILE", help="Log file for the program (default: False)")
+    optional_group.add_argument("-l", "--log", dest="log", action="store_true", default=False, help="Log file for the program (default: False)")
     optional_group.add_argument("-cli", dest="cli", action="store_true", default=False, help="Run the program in CLI mode, this means there's not gonna be any menu (default: False)")
     optional_group.add_argument("-o", "--output", dest="output", type=str, metavar="OUTPUT_DIR", help="Output directory for the modified image or revealed file")
     optional_group.add_argument("-v", "--version", action="version", version=f"VanGonography v{__version__}", help="Show the version number and exit")
     optional_group.add_argument("--encrypt", dest="encrypt", action="store_true", default=False, help="Encrypt the data before hiding it (default: False)")
     optional_group.add_argument("--decrypt", dest="decrypt", action="store_true", default=False, help="Decrypt the data after revealing it (default: False)")
     optional_group.add_argument("--key", dest="key", type=str, metavar="KEY", help="Key to decrypt the data (default: None)")
+    optional_group.add_argument("--json", dest="json", type=str, metavar="JSON_FILE", help="JSON file containing the arguments (default: None)")
+    optional_group.add_argument("--stealth", dest="stealth", action="store_true", default=False, help="Hides the file in stealth mode (default: False)") # TODO: Implement this shit
+    # For anyone wondering, I have no idea how to implement the stealth mode, so if you want to share some ideas
     
     # Positional arguments group (only used in CLI mode)
     positional_group = parser.add_argument_group('Positional arguments (only used in CLI mode)')
@@ -434,6 +438,20 @@ def main():
     positional_group.add_argument("-f", "--file", dest="file", type=str, metavar="HIDDEN_FILE", help="File to be hidden")
 
     args = parser.parse_args()
+    
+    # Getting the json file and setting the arguments
+    if args.json:
+        with open(args.json, "r") as json_file:
+            json_data = json.load(json_file)
+            json_data.pop("desc") # Removing the description argument for not causing errors when setting the attributes
+            
+        for key, value in json_data.items(): # Looping through the json file data
+            if hasattr(args, key): # Checking if the key exists in the args variable
+                setattr(args, key, value) # The args variable is a Namespace object
+            else:
+                print(f"Invalid argument was passed, double check the argument name and try again: {key}")
+                logging.error(f"Invalid argument: {key}")
+                return
     
     # Checking for CLI mode
     if args.cli:

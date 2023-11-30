@@ -1,0 +1,4 @@
+{
+    "desc": "This is a basic example of how to run the program in the UI mode, I'm setting the -cli argument to false, but you don't actually need to do that in the command line.",
+    "cli": false
+}
