@@ -33,6 +33,12 @@
 - [License](#license)
 - [Contributing](#contributing)
 
+| File to hide | Cover image | Cover with file hidden |
+|-----------|-----------| -----------|
+| ![Cute Cat](src/tests/input/Test.jpg) | ![Happy cat](img/Cat.jpg) | ![Another Cute Cat](src/tests/no-encryption/covers/Cover_jpg.png) |
+| This is the file that we want to hide inside the image | This is the image that we want to hide the file inside | This is the cover image with the file inside |
+
+
 # Features <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" width="7%"> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/windows8/windows8-original.svg" width="7%"> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" width="7%">
 
 - **File Hiding:** Hide any type of file within an image of your choice, without altering the image's visual appearance.
