@@ -27,7 +27,6 @@
 # Table of Contents
 
 - [Features](#features)
-- [Introduction](#introduction)
 - [How it works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
@@ -48,12 +47,6 @@
 - **Encryption:** Encrypt the hidden file with a password of your choice *(coming soon)*.
 - **Compression:** Compress the hidden file to reduce its size *(coming soon)*.
 - **Multiple Files:** Hide multiple files inside an image *(coming soon)*.
-
-# Introduction
-
-I've recently had this amazing idea of how could it would be to hide an entire file inside an image, I thought I would've been the first in history to come up with this idea, but of course... I wasn't. <br>
-I did some research and found out that this technique is called [steganography](https://en.wikipedia.org/wiki/Steganography) and it's been around for a while now. The general idea behing it is built all around the fact that images, are composed by bits and every bit is composed by 3 channels that make up the color for that pixel, which are called RGB (Red, Green, Blue). Each channel is composed by 8 bits, which means that each channel can have 256 different values, which means that each pixel can have 256^3 different colors, WHICH MEANS... that each pixel can have 16,777,216 different colors. <br>
-That's A LOT of colors, and that's why we can hide data inside images, because we can change the color of a pixel by just a little bit and the human eye won't even be able to notice the difference. You know another cool thing? Text files are all made up of bits, therefore, we can substitute the 2 last bits of the color channels of each pixel with the bits of a text file and the image will still look the same, but the text file will be hidden inside the image. 
 
 # How it works
 
