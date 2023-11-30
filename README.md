@@ -5,6 +5,12 @@
 </p>
 
 <p align="center">
+
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" width="12%" style="padding-right:10px;">
+  <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bash/bash-original.svg" width="12%" style="padding-right:10px;">  
+
+  <br>
+
   <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License">
   </a>
@@ -19,12 +25,28 @@
 
 # Table of Contents
 
+- [Features](#features)
 - [Introduction](#introduction)
 - [How it works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
 - [License](#license)
 - [Contributing](#contributing)
+
+# Features <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" width="7%"> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/windows8/windows8-original.svg" width="7%"> <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg" width="7%">
+
+- **File Hiding:** Hide any type of file within an image of your choice, without altering the image's visual appearance.
+- **Decoding Capability:** Decode hidden files from images.
+- **Image Comparison:** Visualize the difference between two images.
+- **Detailed Logging:** Create a log file that records comprehensive information about the program's execution.
+- **Command-Line Interface (CLI):** Offers a developer-friendly mode with command-line options for more advanced usage.
+- **User Interface (UI):** Provides a simpler and intuitive mode for non-developer users.
+- **Open After Decoding:** Automatically open the decoded file after extracting it from the image.
+- **Cross-Platform:** Works on Windows, Linux, and macOS.
+- **Free and Open-Source:** Van Gonography is completely free and open-source, and will always be.
+- **Encryption:** Encrypt the hidden file with a password of your choice *(coming soon)*.
+- **Compression:** Compress the hidden file to reduce its size *(coming soon)*.
+- **Multiple Files:** Hide multiple files inside an image *(coming soon)*.
 
 # Introduction
 
