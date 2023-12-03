@@ -54,7 +54,7 @@
 - **Compression:** Compress the hidden file to reduce its size *(coming soon)*.
 - **Multiple Files:** Hide multiple files inside an image *(coming soon)*.
 - **Stealth Mode:** Hide the fact that the image contains a hidden file *(coming soon)*.
-- **User settings:** Save your preferences for future use *(coming soon)*.
+- **User settings:** Save your preferences for future use.
 
 # How it works
 

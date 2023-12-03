@@ -1,6 +1,7 @@
 import os
 import io
 import sys
+import zlib
 import json
 import logging
 import argparse
@@ -18,7 +19,7 @@ from utils import *
 SINGLE_RGB_BIT_SIZE = 8 # Each RGB value is composed of 3 colors, each color is composed of 8 bits
 SINGLE_RGB_PIXEL_BIT_SIZE = SINGLE_RGB_BIT_SIZE * 3 # Each pixel is composed of 3 RGB values, each RGB value is composed of 3 colors, each color is composed of 8 bits
 
-def add_header(image: str, extension: str, data_length: int, output_directory: str = None) -> None:
+def add_header(image: str, extension: str, data_length: int, output_directory: str = "") -> None:
     """
     Adds a header to the cover image before hiding data.
 
@@ -199,7 +200,7 @@ def get_header(image: str) -> dict:
     }
 
 # Getting the RGB of each pixel in the cover image, then converting it to binary and modifying the LSB
-def encode_image(file: str, image: str, output_directory: str = None, encrypt: bool = False) -> None:
+def encode_image(file: str, image: str, output_directory: str = "", encrypt: bool = False, compress = False) -> None:
     try:
         # Check if the file to hide exists
         with open(file, 'rb') as f:
@@ -218,7 +219,16 @@ def encode_image(file: str, image: str, output_directory: str = None, encrypt: b
     with open(file, "rb") as f:
         data = "".join([f"{byte:08b}" for byte in f.read()])
     data_length = len(data)
-    
+   
+    # Compress the data if the user wants to
+    if compress:
+        try:
+            data = zlib.compress(data.encode())
+        except Exception as e:
+            raise Exception(f"Error compressing the data: {e}")
+        data_length = len(data) # Update the data length
+    data = "".join([f"{byte:08b}" for byte in data]) # Convert the data back to binary (zlib compresses the data and converts it to bytes)
+
     # If the user wants to encrypt the data (python vangonography.py -cli -e --encrypt -f tests/input/Test.txt -o C:\Users\jizos\Desktop -c ..\img\Cat.jpg)
     if encrypt:
         key = Fernet.generate_key() # Generate a key for encryption
@@ -290,7 +300,7 @@ def encode_image(file: str, image: str, output_directory: str = None, encrypt: b
     except Exception as e:
         raise Exception(f"Error adding header to the modified cover image: {e}")
                             
-def decode_image(image, output_directory: str = None, open_on_success: bool = False, decrypt: bool = False, key: str = None) -> None:
+def decode_image(image, output_directory: str = "", open_on_success: bool = False, decrypt: bool = False, key: str = "", compressed = False) -> None:
     try:
         # Check if the image file exists
         with open(image, 'rb'):
@@ -322,6 +332,14 @@ def decode_image(image, output_directory: str = None, open_on_success: bool = Fa
     ])
     binary_string = binary_string[:data_length]  # Truncate the binary string to the length of the data
     
+    # If the initial data was compressed, decompress it (TODO: Add a way to check if the data was compressed without needing the user to specify it)
+    if compressed:
+        try:
+            binary_string = zlib.decompress(binary_string.encode())
+        except Exception as e:
+            raise Exception(f"Error decompressing the data: {e}")
+        binary_string = "".join([f"{byte:08b}" for byte in binary_string]) # Convert the data back to binary (zlib compresses the data and converts it to bytes)
+
     # If the user wants to decrypt the data
     if decrypt:
         if not key:
@@ -351,7 +369,7 @@ def decode_image(image, output_directory: str = None, open_on_success: bool = Fa
         except Exception as e:
             raise Exception(f"Error opening output file make sure you have the right program to open it: {e}")
 
-def differentiate_image(source, cover, output_directory: str = None) -> None:
+def differentiate_image(source, cover, output_directory: str = "") -> None:
     try:
         # Check if the source image file exists
         with open(source, 'rb'):
@@ -428,6 +446,8 @@ def main():
     optional_group.add_argument("--json", dest="json", type=str, metavar="JSON_FILE", help="JSON file containing the arguments (default: None)")
     optional_group.add_argument("--stealth", dest="stealth", action="store_true", default=False, help="Hides the file in stealth mode (default: False)") # TODO: Implement this shit
     # For anyone wondering, I have no idea how to implement the stealth mode, so if you want to share some ideas
+    optional_group.add_argument("-z", "--zip", dest="zip", action="store_true", default=False, help="Zip or unzips the file (default: False")
+    
     
     # Positional arguments group (only used in CLI mode)
     positional_group = parser.add_argument_group('Positional arguments (only used in CLI mode)')
@@ -495,7 +515,7 @@ def main():
                     logging.info("Encoding started") # Logging the start
                     logging.info(f"Encoding {args.file} in {args.cover}") # Logging the file and cover image
                     
-                    encode_image(args.file, args.cover, args.output, args.encrypt) # Encoding the file
+                    encode_image(args.file, args.cover, args.output, args.encrypt, args.zip) # Encoding the file
                     
                     print(f"File hidden successfully in {args.cover}.") 
                     logging.info(f"File hidden successfully in {args.cover}.") # Logging the success message, this is also useful for checking the time it took to hide the file
@@ -513,7 +533,7 @@ def main():
                     logging.info("Decoding started") # Logging the start
                     logging.info(f"Decoding {args.cover}") # Logging the cover image
                     
-                    decode_image(args.cover, args.output, args.ood, args.decrypt, args.key) # Decoding the file
+                    decode_image(args.cover, args.output, args.ood, args.decrypt, args.key, args.zip) # Decoding the file
                     
                     print(f"File revealed successfully from {args.cover}.")
                     logging.info(f"File revealed successfully from {args.cover}.") # Same as above
