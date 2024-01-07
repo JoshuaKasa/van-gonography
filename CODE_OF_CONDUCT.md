@@ -1,4 +1,4 @@
-# Code of Conduct
+# Code of Conduct for [Contributing](CONTRIBUTING.md) to Van Gonography
 
 Note: I'm using 'we' even tho [I'm the only one](https://www.youtube.com/watch?v=ZHwVBirqD2s) working on this project (for now) just because it feels more inclusive, formal, welcoming and sounds better, I hope you don't mind.
 
