@@ -169,5 +169,14 @@ MIT © Van Gonography
 
 # Contributing
 
-Pull requests are more than welcome, I love seeing people contribute to my projects and I'll make sure to look at every single one of them. Feel free to contribute translations, features, bug fixes or anything else you think it's necessary, even documentation and README files!
-**if you get any errors, please open an issue and I'll try to fix it as soon as possible :<wbr>)**
+Pull requests are more than welcome, I love seeing people contribute to my projects and I'll make sure to look at every single one of them. Feel free to contribute translations, features, bug fixes or anything else you think it's necessary, even documentation and README files! **if you get any errors, please open an issue and I'll try to fix it as soon as possible :<wbr>)**
+
+### Want to Contribute?
+
+We welcome contributions from the community! Whether you're a developer, designer, or just an enthusiastic user, there are many ways to get involved.
+
+- Found a bug? Report it by [creating an issue](https://github.com/JoshuaKasa/van-gonography/issues).
+- Have an idea for a new feature or improvement? Share it with us through [feature requests](https://github.com/JoshuaKasa/van-gonography/issues).
+- Want to contribute code? Fork the repository and submit a pull request. Make sure to read our [contribution guidelines](CONTRIBUTING.md) for more details.
+
+Ready to contribute? Start by [forking the repository](https://github.com/JoshuaKasa/van-gonography/fork) and making your first contribution today. Every contribution, no matter how small, makes a difference!
