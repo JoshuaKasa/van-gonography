@@ -46,7 +46,7 @@
 - **Image Comparison:** Visualize the difference between two images.
 - **Detailed Logging:** Create a log file that records comprehensive information about the program's execution.
 - **Command-Line Interface (CLI):** Offers a developer-friendly mode with command-line options for more advanced usage.
-- **User Interface (UI):** Provides a simpler and intuitive mode for non-developer users.
+- **User Interface (UI):** Provides an intuitive and easy-to-use mode for non-developers.
 - **Open After Decoding:** Automatically open the decoded file after extracting it from the image.
 - **Cross-Platform:** Works on Windows, Linux, and macOS.
 - **Free and Open-Source:** Van Gonography is completely free and open-source, and will always be.
