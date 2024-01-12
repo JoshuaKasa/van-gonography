@@ -58,39 +58,33 @@
 
 # How it works
 
-Right now, you might be wondering how an entire file can stay inside an image without changing its appearance. Well, it's actually pretty simple.
+**The Basics of Digital Storage**
 
-If you don't know, every file inside your computer, from .exe to .jpg, is stored using bits, which are literally just 1s and 0s. For example, the letter `A` is stored as `01000001`, and the letter `B` is stored as `01000010`. This means that your 1 gigabyte porn video is actually just stored as a bunch of 1s and 0s! To be exact:
+Everything on your computer, from `.exe` files to `.jpg` images, is stored as bits. Bits are just 1s and 0s. For instance:
+- The letter `A` = `01000001`
+- The letter `B` = `01000010`
 
-$$\ \text{Size} = 1 \, \text{GB} \times 1024 \, \text{MB/GB} \times 1024 \, \text{KB/MB} \times 1024 \, \text{bytes/KB} \times 8 \, \text{bits/byte} \$$
+So, a 1-gigabyte file is really 8,5 billion 1s and 0s all lined up in a row. This is called [binary](https://en.wikipedia.org/wiki/Binary_code) and is the basis of all digital storage.
 
-$$\ \text{Size} = 8,589,934,592 \, \text{bits} \$$
+**Pixels and Colors**
 
-Now, another very important thing to know is that images are made up of pixels, and each pixel gets its color from a format called RGB (Red, Green, Blue). Each of those letters corresponds to a channel, numbered from 0 to 255 (1 byte), meaning each channel can have 256 different values.
+Images consist of pixels. Each pixel's color comes from the [RGB](https://en.wikipedia.org/wiki/RGB_color_model) (Red, Green, Blue) format. Each RGB channel ranges from 0 to 255, allowing for 256 values. This range is equivalent to 8 bits (2^8 = 256), so each channel can be represented by 1 byte.
 
-These numbers can also be represented in binary, with each channel composed of 8 bits. Let's say we have a pixel with the color `(0xFF, 0x00, 0x00)`, which is red (because we are modifying the first channel, which is R, red). This means that the pixel is composed of the following bits: `11111111 00000000 00000000`. As files are also composed of bits, we can take the first 2 bits of a file and substitute them with the first 2 bits of a channel, resulting in: `11111111 00000000 00000011`. Repeat this process for every pixel in the image, and for every bit in the file, to hide the file inside the image without changing its appearance.
+Example: A red pixel is `(0xFF, 0x00, 0x00)` or in bits `11111111 00000000 00000000`.
 
-And there you have it! That's how you hide a file inside an image. Now, if you want to know how to do it in Python, you can check out the code in this repository, it's pretty simple and easy to understand.
+**Hiding a File in an Image**
 
-We can also see this as a simple matrix operation:
-Let $I$ be a matrix representing an image, where each element $p_{ij}$ corresponds to a pixel value represented as a hexadecimal number $pv$. This hexadecimal number is decomposed into three channels $R$ (red), $G$ (green), and $B$ (blue), each consisting of values in the range $[0, 255)$.
+Hiding file inside a image is actually simpler than it sounds. All we need to do is:
+1. Convert the file (in our case what we want to hide) to bits.
+2. Replace _some_ bits in the image's pixels with the file's bits.
 
-Consider a file $F$, where each bit is denoted by $b$. Let $\{p_{i,j}^{(l)}\}$ represent a series of pixels in the image, where $i$ is the x-coordinate, $j$ is the y-coordinate, and $l$ is the length of the series.
+For example, if we take the first 2 bits from a file and replace them in a pixel's channel, a red pixel `(11111111 00000000 00000000)` can change to `(11111111 00000000 00000011)` without a visible difference.
 
-Define the operation $\mathcal{B}$ that extracts 2 bits from each $p_{ij}^{(l)}$ and replaces these 2 bits with the corresponding bits from the last channel ($c_b$) of the pixel. This process is iteratively applied until all bits from the file $F$ are embedded into the image.
+Repeat this process for each pixel and every bit in the file, and voilà, the file is hidden in the image!
 
-This can be expressed as follows:
+**Try it Yourself**
 
-$$
-\begin{align*}
-\mathcal{B}: \{p_{ij}^{(l)}\} &\rightarrow \{p_{ij}^{(l)}\} \text{, where} \\
-p_{ij}^{(l)} &= (p_{ij}^{(l)R}, p_{ij}^{(l)G}, p_{ij}^{(l)B}) \\
-\mathcal{B}(x) &= x \mod\ 4 \quad \\
-\text{For } k &= 1, 2, \ldots, n, \text{ the operation is given by} \\
-&\quad b_k \rightarrow \mathcal{B}(p_{ij}^{(l)B_k})=\\
-&\quad \sum_{k=1}^{n} \mathcal{B}(p_{ij}^{(l)B_k})
-\end{align*}
-$$
+Check out the provided Python repository for an easy-to-understand implementation of this process.
 
 # Installation
 
