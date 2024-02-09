@@ -1,5 +1,6 @@
 import os
 from PIL import Image
+import shutil
 
 def get_file_size(file_path: str) -> int:
     size = os.path.getsize(file_path)
@@ -32,3 +33,7 @@ def is_image_file(filename):
             return True
     except:
         return False
+    
+def clear_previous_print_value():
+    '''clears previous print value'''
+    return print('\r' + ' ' * shutil.get_terminal_size().columns, end='', flush=True)

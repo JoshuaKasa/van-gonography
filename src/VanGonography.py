@@ -5,6 +5,7 @@ import zlib
 import json
 import logging
 import argparse
+import time
 
 import numpy as np
 
@@ -19,7 +20,7 @@ from utils import *
 SINGLE_RGB_BIT_SIZE = 8 # Each RGB value is composed of 3 colors, each color is composed of 8 bits
 SINGLE_RGB_PIXEL_BIT_SIZE = SINGLE_RGB_BIT_SIZE * 3 # Each pixel is composed of 3 RGB values, each RGB value is composed of 3 colors, each color is composed of 8 bits
 
-def add_header(image: str, extension: str, data_length: int, output_directory: str = "") -> None:
+def add_header(image: str, extension: str, data_length: int) -> None:
     """
     Adds a header to the cover image before hiding data.
 
@@ -33,7 +34,7 @@ def add_header(image: str, extension: str, data_length: int, output_directory: s
     """
     try:
         # Check if the image file exists
-        with open(image, 'rb') as img_file:
+        with open(image, 'rb'):
             pass
     except FileNotFoundError:
         raise FileNotFoundError(f"Image file not found: {image}")
@@ -201,6 +202,8 @@ def get_header(image: str) -> dict:
 
 # Getting the RGB of each pixel in the cover image, then converting it to binary and modifying the LSB
 def encode_image(file: str, image: str, output_directory: str = "", encrypt: bool = False, compress = False) -> None:
+    print('please wait, cheking files...', end='')
+    time.sleep(1)
     try:
         # Check if the file to hide exists
         with open(file, 'rb') as f:
@@ -210,7 +213,7 @@ def encode_image(file: str, image: str, output_directory: str = "", encrypt: boo
 
     try:
         # Check if the cover image file exists
-        with open(image, 'rb') as img_file:
+        with open(image, 'rb'):
             pass
     except FileNotFoundError:
         raise FileNotFoundError(f"Cover image file not found: {image}")
@@ -218,19 +221,22 @@ def encode_image(file: str, image: str, output_directory: str = "", encrypt: boo
     # Get the binary data of a file to hide
     with open(file, "rb") as f:
         data = "".join([f"{byte:08b}" for byte in f.read()])
-    data_length = len(data)
-   
+        data_length = len(data)
+    
     # Compress the data if the user wants to
     if compress:
+        print('compressing data...')
         try:
             data = zlib.compress(data.encode())
         except Exception as e:
             raise Exception(f"Error compressing the data: {e}")
-        data_length = len(data) # Update the data length
-    data = "".join([f"{byte:08b}" for byte in data]) # Convert the data back to binary (zlib compresses the data and converts it to bytes)
+        else:
+            data_length = len(data) # Update the data length
+            data = "".join([f"{byte:08b}" for byte in data]) # Convert the data back to binary (zlib compresses the data and converts it to bytes)
 
     # If the user wants to encrypt the data (python vangonography.py -cli -e --encrypt -f tests/input/Test.txt -o C:\Users\jizos\Desktop -c ..\img\Cat.jpg)
     if encrypt:
+        print('encrypting data...')
         key = Fernet.generate_key() # Generate a key for encryption
         with open("key.key", "wb") as key_file:
             key_file.write(f"This is your encryption key, keep it safe, you will need it to decrypt the data: {key}".encode()) # Write the key to a file
@@ -250,35 +256,47 @@ def encode_image(file: str, image: str, output_directory: str = "", encrypt: boo
         with Image.open(image, 'r') as cover:
             cover_array = np.array(cover)
     except Exception as e:
-        raise Exception(f"Error opening the cover image: {e}")
+        raise Exception(f"Error opening the cover image: {e}.\nMake sure it is a valid image file.")
 
     # Getting the width and height of the cover image
     width = cover_array.shape[1]
     height = cover_array.shape[0]
-
+    
     # Checking if the cover image is large enough to hide the data
-    if width * height * SINGLE_RGB_PIXEL_BIT_SIZE * 2 < data_length:
+    if width * height * (SINGLE_RGB_PIXEL_BIT_SIZE * 2) < data_length:
         raise ValueError("Cover image is too small to hide the data.")
 
     data_index = 0
     bitmask = 0b11111100  # Used to clear the last two bits of a number
 
+    clear_previous_print_value()
+    percents = range(100+1); ptrack = set()#to track printed percentages
+
     # Looping through each pixel in the cover image
     for i in range(1, width):  # Loop through each column
+
+        # Checking if there's still data to hide
+        if data_index >= len(data):
+            break  # Exit the outer loop if all data is processed
+
         for j in range(height):  # Loop through each row
 
             # Checking if there's still data to hide
             if data_index >= len(data):
                 break  # Exit the inner loop if all data is processed
 
-            # Get the RGB values of the current pixel
-            r, g, b = cover_array[j, i]
+            
 
             # Modify the last two bits of each channel
             for k in range(3):
                 if data_index < len(data):
                     cover_array[j, i][k] = (cover_array[j, i][k] & bitmask) | int(data[data_index:data_index + 2], 2)
                     data_index += 2  # Increment the data index by 2 because we're processing 2 bits at a time
+                    # print percentages
+                    percentage = int(((data_index - len(data)) / len(data)) * 100 + 100)
+                    if percentage in percents and percentage not in ptrack:
+                        ptrack.add(percentage)
+                        print(f' Hiding file...{percentage}%', end='\r')
                 else:
                     break
                 
@@ -296,9 +314,16 @@ def encode_image(file: str, image: str, output_directory: str = "", encrypt: boo
 
     # Add header to the modified cover image
     try:
-        add_header(output_filename, extension, data_length, output_filename)
+
+        add_header(output_filename, extension, data_length)
     except Exception as e:
         raise Exception(f"Error adding header to the modified cover image: {e}")
+    else:
+        clear_previous_print_value()
+        print(f'Process Complete\n'
+              f'Image with Hidden file "{os.path.basename(output_filename)}" '
+              f'saved succefully at "{os.path.dirname(output_filename)}"')
+
                             
 def decode_image(image, output_directory: str = "", open_on_success: bool = False, decrypt: bool = False, key: str = "", compressed = False) -> None:
     try:
@@ -328,7 +353,8 @@ def decode_image(image, output_directory: str = "", open_on_success: bool = Fals
     # This is a bit hard to explain, but basically, we're getting the last two bits of each RGB value and concatenating them to form a binary string
     binary_string = "".join([
         f"{(steg_array[j, i][0] & 0b00000011):02b}{(steg_array[j, i][1] & 0b00000011):02b}{(steg_array[j, i][2] & 0b00000011):02b}"
-        for i in range(1, width) for j in range(height) if data_length > 0
+        for i in range(1, width) for j in range(height)
+        if data_length > 0
     ])
     binary_string = binary_string[:data_length]  # Truncate the binary string to the length of the data
     
@@ -361,6 +387,8 @@ def decode_image(image, output_directory: str = "", open_on_success: bool = Fals
         binary_to_file(binary_string, output_filename)
     except Exception as e:
         raise Exception(f"Error creating output file: {e}")
+    else:
+        print(f"successfully extracted file '{os.path.basename(output_filename)}' to '{os.path.dirname(output_filename)}'")
     
     # Open the file if the user wants to
     if open_on_success:
@@ -611,8 +639,8 @@ def main():
                 try:
                     # Get the file to hide
                     root = Tk()
-                    root.withdraw()
                     file = filedialog.askopenfilename(title="Select file to hide")
+                    root.withdraw()
 
                     # Check if the user canceled the file selection
                     if not file:
@@ -620,8 +648,8 @@ def main():
 
                     # Get the cover image
                     root = Tk()
-                    root.withdraw()
                     image = filedialog.askopenfilename(title="Select cover image")
+                    root.withdraw()
 
                     # Check if the user canceled the image selection
                     if not image:
@@ -633,8 +661,8 @@ def main():
 
                     # Get the output directory
                     root = Tk()
-                    root.withdraw()
                     output_directory = filedialog.askdirectory(title="Select output directory")
+                    root.withdraw()
                     
                     # Check if the user canceled the output directory selection
                     if not output_directory:
@@ -654,8 +682,8 @@ def main():
                 try:
                     # Get the image with the hidden file
                     root = Tk()
-                    root.withdraw()
                     image = filedialog.askopenfilename(title="Select image with hidden file")
+                    root.withdraw()
 
                     # Check if the user canceled the image selection
                     if not image:
@@ -667,8 +695,8 @@ def main():
 
                     # Get the output directory
                     root = Tk()
-                    root.withdraw()
                     output_directory = filedialog.askdirectory(title="Select output directory")
+                    root.withdraw()
                     
                     # Check if the user canceled the output directory selection
                     if not output_directory:
@@ -688,8 +716,8 @@ def main():
                 try:
                     # Get the source image
                     root = Tk()
-                    root.withdraw()
                     source = filedialog.askopenfilename(title="Select source image")
+                    root.withdraw()
 
                     # Check if the user canceled the image selection
                     if not source:
@@ -701,8 +729,8 @@ def main():
 
                     # Get the cover image
                     root = Tk()
-                    root.withdraw()
                     cover = filedialog.askopenfilename(title="Select cover image")
+                    root.withdraw()
 
                     # Check if the user canceled the image selection
                     if not cover:
@@ -714,8 +742,8 @@ def main():
 
                     # Get the output directory
                     root = Tk()
-                    root.withdraw()
                     output_directory = filedialog.askdirectory(title="Select output directory")
+                    root.withdraw()
                     
                     # Check if the user canceled the output directory selection
                     if not output_directory:
