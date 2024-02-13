@@ -1,10 +1,12 @@
 '''module for handling multiple files, meant to be an extension of the VanGonography module\n
-How it works: Initialize the VanGons class, with a cover image an list of files you want to hide.\n
-`v = VanGons(["files to hide"], "cover image")`\n
-`v.encode("output directory")` # to hide files into an image\n
-`v.decode("encoded_cover_image", "output directory")` # to decode files from an encoded image\n
+How it works: Initialize the VanGons class\n
+`v = VanGons()`\n
+# to hide files into an image
+`v.encode(["files to hide"], "cover image", "output directory")`\n
+# to decode files from an encoded image
+`v.decode("encoded_cover_image", "output directory")`\n
 `Note:`\n
-rgba images, i.e images with shape(row, colomn, 4) doesn't work currently and will result in the error,\n
+rgba images, i.e images with shape(row, colomn, 4) doesn't work currently and will result in the error:\n
 `could not broadcast input array from shape (3,) into shape (4,)`'''
 
 import os
@@ -16,12 +18,9 @@ import time
 
 class VanGons:
     """class for handling multiple files, 
-    meant to be an extension of the VanGonography module.\n
-    Arguments to be passed when initializing.\n
-    `VanGons(files: list[str], cover_image: str)`"""
-    def __init__(self, files: list[str], cover_image: str) -> None:
-        self.files = files
-        self.image = cover_image
+    meant to be an extension of the VanGonography module.\n"""
+
+    def __init__(self) -> None:
         self.SINGLE_RGB_BIT_SIZE = 8
         self.SINGLE_RGB_PIXEL_BIT_SIZE = self.SINGLE_RGB_BIT_SIZE * 3
 
@@ -257,21 +256,21 @@ class VanGons:
             "data_lengths": data_lengths
         }
         
-    def encode_files(self, output_directory: str) -> None:
+    def encode_files(self, files: list[str], image: str, output_directory: str='') -> None:
         '''for encoding multiple files to an image.\n
         output_directory: Dir to save image'''
         print('please wait, cheking files...', end='')
         time.sleep(1)
         try:
             # Check if the cover image file exists
-            with open(self.image, 'rb'):
+            with open(image, 'rb'):
                 pass
         except FileNotFoundError:
-            raise FileNotFoundError(f"Cover image file not found: {self.image}")
+            raise FileNotFoundError(f"Cover image file not found: {image}")
         
         # Read the cover image and work with it
         try:
-            with Image.open(self.image, 'r') as cover:
+            with Image.open(image, 'r') as cover:
                 cover_array = np.array(cover)
         except Exception as e:
             raise Exception(f"Error opening the cover image: {e}.\nMake sure it is a valid image file.")
@@ -285,7 +284,7 @@ class VanGons:
         extensions = [] # initialize list for the extension
 
         # Get the binary data of a file to hide to check if size fits
-        for file in self.files:
+        for file in files:
             try:
                 # Check if the file to hide exists
                 with open(file, 'rb') as f:
@@ -306,7 +305,7 @@ class VanGons:
         r_track = -1 # tracks the row each bit is hidden for each file
         c_track = 0 # tracks the column each bit is hidden for each file
 
-        for ind, file in enumerate(self.files):
+        for ind, file in enumerate(files):
         
             # Get the binary data of a file to hide
             with open(file, "rb") as f:
@@ -374,7 +373,7 @@ class VanGons:
         except Exception as e:
             raise Exception(f"Error adding header to the modified cover image: {e}")
 
-    def decode_files(self, image: str, output_directory: str) -> None:
+    def decode_files(self, image: str, output_directory: str='') -> None:
         '''for decoding multiple files from a cover image.\n
         image: Cover image
         output_directory: Dir to save image'''
