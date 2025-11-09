@@ -357,14 +357,23 @@ def decode_image(image, output_directory: str = "", open_on_success: bool = Fals
         if data_length > 0
     ])
     binary_string = binary_string[:data_length]  # Truncate the binary string to the length of the data
-    
-    # If the initial data was compressed, decompress it (TODO: Add a way to check if the data was compressed without needing the user to specify it)
-    if compressed:
-        try:
-            binary_string = zlib.decompress(binary_string.encode())
-        except Exception as e:
-            raise Exception(f"Error decompressing the data: {e}")
-        binary_string = "".join([f"{byte:08b}" for byte in binary_string]) # Convert the data back to binary (zlib compresses the data and converts it to bytes)
+
+    def bits_to_bytes(bit_string: str) -> bytes:
+        if not bit_string:
+            return b""
+        byte_length = (len(bit_string) + 7) // 8
+        return int(bit_string, 2).to_bytes(byte_length, byteorder="big")
+
+    def ensure_byte_payload(payload: bytes) -> bytes:
+        if not payload:
+            return b""
+        if all(byte in b"01" for byte in payload):
+            bit_text = payload.decode()
+            return bits_to_bytes(bit_text)
+        return payload
+
+    # Convert the recovered binary string into bytes for further processing
+    data_bytes = bits_to_bytes(binary_string)
 
     # If the user wants to decrypt the data
     if decrypt:
@@ -373,15 +382,26 @@ def decode_image(image, output_directory: str = "", open_on_success: bool = Fals
             raise ValueError("No key was given, you must give a key to decrypt the data.") # Check if the user gave a key
         try:
             f = Fernet(key) # Create a Fernet object
-            binary_string = f.decrypt(binary_string.encode()) # Decrypt the data
+            data_bytes = f.decrypt(data_bytes) # Decrypt the data
         except Exception as e:
             raise Exception(f"Error decrypting the data: {e}")
+        data_bytes = ensure_byte_payload(data_bytes)
+
+    # If the initial data was compressed, decompress it (TODO: Add a way to check if the data was compressed without needing the user to specify it)
+    if compressed:
+        try:
+            data_bytes = zlib.decompress(data_bytes)
+        except Exception as e:
+            raise Exception(f"Error decompressing the data: {e}")
+        data_bytes = ensure_byte_payload(data_bytes)
+
+    binary_string = "".join([f"{byte:08b}" for byte in data_bytes])  # Convert the data back to binary representation for file writing
 
     # Saving the file
     output_filename = f"Output.{extension}"
     if output_directory:
         output_filename = os.path.join(output_directory, output_filename)
-    
+
     try:
         # Make a file out of the binary string then adding the file extension
         binary_to_file(binary_string, output_filename)
