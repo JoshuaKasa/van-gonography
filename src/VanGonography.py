@@ -231,7 +231,7 @@ def encode_image(file: str, image: str, output_directory: str = "", encrypt: boo
         except Exception as e:
             raise Exception(f"Error compressing the data: {e}")
         else:
-            data_length = len(data) # Update the data length
+            data_length = len(data) * 8  # Update the data length to reflect bits
             data = "".join([f"{byte:08b}" for byte in data]) # Convert the data back to binary (zlib compresses the data and converts it to bytes)
 
     # If the user wants to encrypt the data (python vangonography.py -cli -e --encrypt -f tests/input/Test.txt -o C:\Users\jizos\Desktop -c ..\img\Cat.jpg)
@@ -244,6 +244,7 @@ def encode_image(file: str, image: str, output_directory: str = "", encrypt: boo
         try:
             f = Fernet(key) # Create a Fernet object
             data = f.encrypt(data.encode()) # Encrypt the data
+            data_length = len(data) * 8  # Update the data length to reflect bits
             data = "".join([f"{byte:08b}" for byte in data]) # Convert the data back to binary (Fernet encrypts the data and converts it to bytes)
         except Exception as e:
             raise Exception(f"Error encrypting the data: {e}")
