@@ -572,15 +572,17 @@ def main():
                     
             # Checking for differentiating images
             elif args.show:
-                if args.file:
-                    print("You can't insert the file to hide you must only insert the source and cover images and optionally the output directory.")
-                    logging.error("A file to hide was given, but you must only insert the source and cover images and optionally the output directory.")
+                if not args.file:
+                    print("You must provide both the source image (-f/--file) and the cover image (-c/--cover) to show differences.")
+                    logging.error("Source image was not provided while attempting to show differences between images.")
+                    return
+
                 try:
                     logging.info("Differentiating started") # Logging the start
-                    logging.info(f"Differentiating {args.cover} and {args.file}") # Logging the source and cover images
-                    
-                    differentiate_image(args.cover, args.output)
-                    
+                    logging.info(f"Differentiating {args.file} and {args.cover}") # Logging the source and cover images
+
+                    differentiate_image(args.file, args.cover, args.output)
+
                     print(f"Difference image saved successfully as Difference.png.")
                     logging.info(f"Difference image saved successfully as Difference.png.") # Again, same as above
                 except Exception as e:
